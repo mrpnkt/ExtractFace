@@ -1,0 +1,239 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<!--
+# Copyright (C) 2015  Alain Rioux (le-tools.com)
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+<head>
+<title>ExtractFace</title>
+<link rel="stylesheet" type="text/css" href="../Style.css">
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+</head>
+<body>
+
+<table border=0 cellspacing=0 cellpadding=0>
+<tr>
+<td width="80px" align="center" rowspan=2><img src="ExtractFace48.png" alt="Logo" width="48" height="48" border="0"></td>
+<td align="left" valign="center" style="color:#000066; font-size: 100%; font-weight: bold;">ExtractFace<br>Copyright (c) 2015 Alain Rioux<br></td></tr>
+<tr><td align="left" style="color:#000066; font-size: 90%;">See <a href="#Credits">Credits</a> about the logo</td></tr>
+</table><br>
+
+<h2><a name="WhatIsIt">What is it</a></h2>
+<p>Investigators, researchers or other analysts often have to get local 
+copies of Facebook data. It can be for a lot of reasons like submitting 
+Facebook data as evidence, doing advanced offline analysis, etc. But 
+Facebook interface has not been designed for that and does not provide 
+printing or saving functions. Even for a user that want a copy of a 
+conversation in his profile, there is no simple solution.</p>
+<p>ExtractFace has been designed to help people to collect data from 
+Facebook. It provides usefull functions to automate a lot of tasks 
+that have to be done manually otherwise. See documentation for more 
+details.</p>
+<img src="ExtractFace_menu.png" alt="Menu" width="217" height="392" border="0">
+
+<h2><a name="HowItWorks">How it works</a></h2>
+<p>ExtractFace doesn't require any installation. In order to start using 
+it, just run the executable file. While running, you can access ExtractFace 
+functions from the taskbar menu.</p>
+<p>ExtractFace uses MozRepl add-on* to automate Mozilla Firefox browser. 
+So you can crawl Facebook as normal with Firefox and use ExtractFace 
+to automate some annoying things like scrolling or clicking in order to 
+get additional content. When the content is fully loaded in your browser, 
+you can print to PDF, capture screen, or use ExtractFace again to 
+collect the data in a usefull way.</p>
+
+<h2><a name="WhatDoYouNeed">What do you need</a></h2>
+<ul>
+<li>Windows XP or newer</li>
+<li>Mozilla Firefox (<a href="https://www.mozilla.org" target="_blank">
+https://www.mozilla.org</a>)</li>
+<li>MozRepl add-on (<a href="https://github.com/bard/mozrepl" 
+target="_blank">https://github.com/bard/mozrepl</a>, to install: 
+<a href="https://addons.mozilla.org/en-US/firefox/addon/mozrepl/" 
+target="_blank">https://addons.mozilla.org/en-US/firefox/addon/mozrepl/</a>): 
+When using ExtractFace, be sure that MozRepl is enabled. You can check the 
+<strong>Activate on startup</strong> option so it's enabled by default 
+when you use Firefox;</li>
+</ul>
+<p>Important: If you connect to a Facebook account while using ExtractFace 
+(which it is recommended by the way), you must set the langage of the 
+profile to "english".</p>
+
+<h2><a name="VersionsHistory">Versions History</a></h2>
+<table border=1 cellspacing=0 cellpadding=2>
+<tr>
+<td align="center" style="font-weight: bold;">Version</td>
+<td align="center" style="font-weight: bold;">Comments</td>
+</tr>
+<tr>
+<td align="center" valign="top">2.0</td>
+<td>
+<ul>
+<li>First public release.</li>
+<li>Now licensed under GPLv3</li>
+</ul>
+</td>
+</tr>
+<tr>
+<td align="center" valign="top">1.5</td>
+<td><ul>
+<li>Dump Albums</li>
+<ul>
+<li>Video Albums are now supported</li>
+</ul>
+<li>Dump Friends</li>
+<ul>
+<li>New option: Include profile icons</li>
+</ul>
+<li>Dump Chat</li>
+<ul>
+<li>Fixed an issue in report when the last column contains long word: last 
+column is now wrapped to fit available space</li>
+<li>Fixed an issue in report when image in full size is the same file as 
+the one in chat: Original width and height are now preserved in the chat</li>
+<li>Fixed an issue in report for encoding problem with notification</li>
+<li>Better support of notifications</li>
+</ul>
+<li>Settings</li>
+<ul>
+<li>New option: Delete temp files when finished</li>
+</ul>
+</ul>
+</td>
+</tr>
+<tr>
+<td align="center" valign="top">1.4</td>
+<td><ul>
+<li>Dump Chat</li>
+<ul><li>Fixed some issues related to code change on Facebook.</li></ul>
+</ul>
+</td>
+</tr>
+<tr>
+<td align="center" valign="top">1.3</td>
+<td><ul>
+<li>Dump Chat</li>
+<ul><li>Download image in full size</li></ul>
+</ul>
+</td>
+</tr>
+<tr>
+<td align="center" valign="top">1.1</td>
+<td><ul>
+<li>Can now be translated</li>
+<li>Dump Chat</li>
+<ul><li>New option "Searched part only"</li><li>Emoticon images is now supported</li></ul>
+<li>Configuration</li>
+<ul><li>New tab Chat options</li>
+<ul><li>Maximum scrolling value</li><li>Text of scrolling link</li></ul></ul>
+</ul>
+</td>
+</tr>
+<tr>
+<td align="center" >1.0</td>
+<td>First release. Limited distribution.</td>
+</tr>
+</table><br>
+
+
+<h2><a name="Translation">Translation</a></h2>
+<h3>To translate ExtractFace to other languages:</h3>
+<ol>
+<li>In <strong>Settings</strong> window, use the <strong>Export Lang.ini</strong> 
+function. The file will be saved in the same directory of the tool;</li>
+<li>Open the file in any text editor like Notepad;</li>
+<li>Translate each expression at the right of the <strong>=</strong> symbol;</li>
+<ul>
+<li>The expression on the left side is used by the tool to identify the expression 
+so do not change it. Also, be sure to have a space between the <strong>=</strong> symbol 
+and your expression (ex. Key = Value);</li>
+<li>Authorized characters are alphanumerics, spaces and these symbols: ",", ".", "-", 
+"!", ",", "(" and ")". Any other character will be deleted;</li>
+<li>For some controls, string length must be the same as original. A longer string could 
+be truncated if it doesn't match the length of the field;</li>
+<li>The value associated with the <strong>translatorName</strong> will be used in 
+the <strong>About</strong> window to identify you as translator (if you want). You can 
+also add your email or a short url (ex. YourName (youraddress@email.com));</li>
+</ul>
+<li>Restart the tool so the strings in <strong>Lang.ini</strong> will be used 
+instead of the default language.</li>
+</ol>
+<p>If you translate the tool and you want to share, contact the author.</p>
+<h3>Available translations:</h3>
+<p>To install, save the appropriate <strong>Lang.ini</strong> file in the same 
+directory of the tool.</p>
+<table border=1 cellspacing=0 cellpadding=2>
+<tr>
+<td align="center" style="font-weight: bold;">Language</td>
+<td align="center" style="font-weight: bold;">Translated By</td>
+<td align="center" style="font-weight: bold;">Date</td>
+<td align="center" style="font-weight: bold;">For Version</td>
+</tr>
+<tr>
+<td><a href="http://www.le-tools.com/ExtractFace/fr/Lang.ini" target="_blank">Français</a></td>
+<td>Alain Rioux</td>
+<td align="center" >2015-11-20</td>
+<td align="center" >2.0</td>
+</table><br>
+
+
+<h2><a name="KnownProblems">Known Problems</a></h2>
+<ul>
+<li>ExtractFace is an experimental tool that have to be updated 
+often to follow any change in Facebook code.</li>
+<li>ExtractFace may also be affected by any updates to Mozilla 
+Firefox or the MozRepl add-on.</li>
+<li>ExtractFace support utf8 but some encoding problems can happen anyway.</li>
+</ul>
+
+
+<h2><a name="License">License</a></h2>
+<p>Copyright (C) 2015  Alain Rioux</p>
+<p>This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.</p>
+<p>This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.</p>
+<p>You should have received a copy of the GNU General Public License
+along with this program.  If not, see <a href="http://www.gnu.org/licenses/" 
+target="_blank">http://www.gnu.org/licenses/</a>.</p>
+
+
+<h2><a name="Feedback">Feedback</a></h2>
+<p>If you have any problem, suggestion, comment, or you found a bug in my
+utility, you can send a message at <a href="http://le-tools.com/about.php" 
+target="_blank">http://le-tools.com/about.php</a>.</p>
+
+
+<h2><a name="Credits">Credits</a></h2>
+<p>The main logo of ExtractFace have been created by Land-of-Web 
+(<a href="http://www.land-of-web.com" target="_blank">http://www.land-of-web.com</a>) and distributed as freeware.</p>
+<p>Most of other icons have been created by Icojam 
+(<a href="http://www.icojam.com/" target="_blank">http://www.icojam.com/</a>) and are licensed as "Public Domain", 
+except for small <strong>Open folder</strong> icon which has 
+been created by <strong>PixelMixer</strong> and distributed as 
+freeware.</p>
+
+<br>
+<hr>
+
+<p style="color:#000066; font-size: 100%; font-weight: bold;">ExtractFace<br>Copyright 
+(c) 2015 Alain Rioux</p>
+
+</body>
+</html>

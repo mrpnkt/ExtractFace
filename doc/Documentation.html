@@ -1,0 +1,330 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<!--
+# Copyright (C) 2015  Alain Rioux (le-tools.com)
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+<head>
+<title>ExtractFace Documentation</title>
+<link rel="stylesheet" type="text/css" href="../Style.css">
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+</head>
+<body>
+
+<table border=0 cellspacing=0cellpadding=0>
+<tr>
+<td width="80px" align="center" rowspan=2><img src="ExtractFace48.png" alt="Logo" width="48" height="48" border="0"></td>
+<td align="left" valign="center" style="color:#000066; font-size: 100%; font-weight: bold;">ExtractFace<br>Copyright (c) 2015 Alain Rioux<br></td></tr>
+<tr><td align="left" style="color:#000066; font-size: 90%;">See <a href="./ExtractFace.html#Credits">Credits</a> about the logo</td></tr>
+</table><br>
+
+<hr>
+
+<h1><a name="DontForget">Documentation</a></h1>
+<ul>
+<li><a href="#UsingExtractFace">Using ExtractFace</a></li>
+<li><a href="#GeneralFunctions">General Functions</a></li>
+<li><a href="#DumpAlbums">Dump Albums</a></li>
+<li><a href="#DumpFriends">Dump Friends</a></li>
+<li><a href="#DumpEventMembers">Dump Event Members</a></li>
+<li><a href="#ChatFunctions">Chat Functions</a></li>
+<li><a href="#Settings">Settings</a></li>
+</ul>
+
+<h2 style="margin-top:1.5em;"><a name="UsingExtractFace">Using ExtractFace</a></h2>
+<ol>
+<li>Start Mozilla Firefox;</li>
+<li>Start MozRepl addon if you didn't set the <strong>Activate on startup</strong> option;</li>
+<li>Login to your profile and be sure it's set to english;</li>
+<li>Go to your target page;</li>
+<li>Right-click on ExtractFace taskbar icon to popup the menu.</li>
+</ol>
+<img src="ExtractFace_menu.png" alt="Menu" width="217" height="392" border="0">
+<p>* You can start ExtractFace (or restart after crash) at anytime.</p>
+
+<div style="margin: 0 0 0 0;"><a href="#DontForget">Top of the page</a></div>
+<h2 style="margin-top:1.5em;"><a name="GeneralFunctions">General Functions</a></h2>
+<p>Facebook, like many other websites, use Javascript/Ajax to display content to 
+the user. The page is the same but the content change as user click on things or 
+do something. Often, to be able to see the whole page, you have to scroll and 
+click lot of things which could be very time consuming if you want it all.</p>
+<p>To automate that process, ExtractFace provides the <strong>Scroll</strong> and 
+the <strong>Expand</strong> function. Both would work on many pages of a Facebook 
+profile. The most important is the <strong>Timeline</strong> page where you can 
+use the combined <strong>Scroll and Expand</strong> function.</p>
+<p><strong>Scroll</strong> will simply scroll down the page until the end and 
+<strong>Expand</strong> will click on <strong>See more</strong> and similar links. 
+The <strong>Expand</strong> function can be customized. See 
+<a href="#Settings">Settings</a> for details.</p>
+
+<div style="margin: 0 0 0 0;"><a href="#DontForget">Top of the page</a></div>
+<h2 style="margin-top:1.5em;"><a name="DumpAlbums">Dump Albums</a></h2>
+<p>This function can be use to gather all (or some) albums of photos. 
+To be able to use it, you must be anywhere in the target profile.</p>
+<img src="DumpAlbumsWindow.png" alt="DumpAlbumsWindow" width="755" height="280" border="0">
+<p>When you select this function, ExtractFace:</p>
+<ol>
+<li>Displays the <strong>Dump albums</strong> window;</li>
+<li>Checks if you are already in the <strong>photos_albums</strong> page;</li>
+<li>If yes, scrolls down to the bottom;</li>
+<li>If no, gets the right page and scrolls down to the bottom;</li>
+<li>In the <strong>Dump albums</strong> window, displays the album name and url 
+available.</li>
+</ol>
+<p>You have to select a directory where albums and photos will be saved.</p>
+<p>When ready, you can click on <strong>Dump</strong> to start the process. 
+ExtractFace will create a directory for each album selected and download all 
+the images from that album. At the end of the process, ExtractFace display 
+the local directory where the files have been saved.</p>
+
+<div style="margin: 0 0 0 0;"><a href="#DontForget">Top of the page</a></div>
+<h2 style="margin-top:1.5em;"><a name="DumpFriends">Dump Friends</a></h2>
+<p>This function can be use to gather the friend list associated to a 
+profile. It produces a XLSX file that contains some details of the 
+profile's friends. To be able to use it, you must be anywhere in the 
+target profile.</p>
+<img src="DumpFriendsWindow.png" alt="DumpFriendsWindow" width="610" height="240" border="0">
+<p>When you select this function, ExtractFace:</p>
+<ol>
+<li>Displays a the <strong>Dump friends</strong> window;</li>
+<li>Checks if you are already in the <strong>friends</strong> page;</li>
+<li>If yes, scrolls down to the bottom;</li>
+<li>If no, gets the right page and scrolls down to the bottom;</li>
+<li>Proposes a name for the XLSX file.</li>
+</ol>
+<p>You have to select a directory where the output XLSX file will be saved.</p>
+<p>When ready, you can click on <strong>Dump</strong> to start the process. If 
+<strong>Include profile icons</strong> is checked, image of profiles are 
+included in the report (column <strong>Image</strong> and <strong>Image 
+Path</strong>). At the end of the process, ExtractFace display the 
+output XLSX file if the option is checked. The report will look like this:</p>
+<img src="DumpFriendsSample.png" alt="DumpFriendsSample" width="885" height="444" border="0">
+<br><br>
+
+<div style="margin: 0 0 0 0;"><a href="#DontForget">Top of the page</a></div>
+<h2 style="margin-top:1.5em;"><a name="DumpEventMembers">Dump Event Members</a></h2>
+<p>This function can be use to gather the guest lists associated to an 
+event. It produces a XLSX file that contains some details on the 
+event members. To be able to use it, you must be in the main page of 
+the event.</p>
+<img src="DumpEventsWindow.png" alt="DumpEventsWindow" width="755" height="410" border="0">
+<p>When you select this function, ExtractFace:</p>
+<ol>
+<li>Displays a the <strong>Dump event members</strong> window;</li>
+<li>Checks if you are in the <strong>events</strong> page;</li>
+<li>If no, displays an error message;</li>
+<li>If yes, gathers details about the event like the event ID, the profile 
+ID of the author and the data URL. It also gathers details about the 
+guest lists. There are four guest lists for each event:</li>
+<ul>
+<li><strong>Going</strong> (or <strong>went</strong>);</li>
+<li><strong>Maybe</strong>;</li>
+<li><strong>Invited</strong>;</li>
+<li><strong>Declined</strong> (<strong>Can't Go</strong>);</li>
+</ul>
+<li>Proposes a name for the XLSX file.</li>
+</ol>
+<p>You have to select a directory where the XLSX file will be saved. 
+You may also select the <strong>Download profile icons</strong> option to get every 
+images associated with the profiles of the event members.</p>
+<p>When ready, you can click on <strong>Dump</strong> to start the process. When you 
+press <strong>Dump</strong>, ExtractFace:</p>
+<ol>
+<li>Get the first data set which contains the four guest list members 
+(max. 500 for each list);</li>
+<li>Parse the data to gathers event member details;</li>
+<li>If you select the <strong>Download profile icons</strong> option:</li>
+<ul>
+<li>Download profile icons;</li>
+<li>During the process, ExtractFace may crash a few times. This is 
+	normal, but it may result corrupted image files;</li>
+<li>So at the end, ExtractFace will check integrity of every image 
+	files and replace corrupted ones;</li>
+</ul>
+<li>Creates the XLSX file, a spreasheet for each guest list.</li>
+</ol>
+<p>At the end of the process, ExtractFace display the XLSX file if 
+the option <strong>Open output file in XLSX</strong> is checked. 
+Report will look like the one produced by <a href="#DumpFriends">Dump 
+Friends</a>.</p>
+<p><strong style="text-decoration: underline;">Important:</strong> For 
+each guest list, you will get a maximum of 500 members. If you think not 
+all event members have been gathered (yes it may happen!), you can restart 
+the process, but don't delete old files. Some will be replaced, but profile 
+icons already downloaded will not be downloaded again, so it's gonna be 
+faster.</p>
+
+<div style="margin: 0 0 0 0;"><a href="#DontForget">Top of the page</a></div>
+<h2 style="margin-top:1.5em;"><a name="ChatFunctions">Chat Functions</a></h2>
+<p>ExtractFace provides some functions to help you extract conversations 
+from your Facebook profile. To be able to use these function, you must 
+select <strong>See All</strong> from the chat menu, then select any of the 
+conversation on the left side. In the address bar of your browser, you 
+should have an address like "https://www.facebook.com/messages/[id of the 
+other person].</p>
+<img src="ExtractFace_menu_DumpChatFunctions.png" alt="Menu" width="217" height="392" border="0">
+<p>The <strong>Scroll Chat</strong> function will get all messages of the 
+conversation from the beginning. If you only want to get a part of the 
+conversation, you can do a search by using the <strong>Search messages in 
+the conversation</strong> function provided by Facebook. When you find the 
+message, you can use <strong>Load Older Messages</strong> and/or <strong>Load 
+Newer Messages</strong> functions in ExtractFace to display older or newer 
+messages around the searched one.</p>
+<img src="DumpChatWindow.png" alt="DumpChatWindow" width="660" height="270" border="0">
+<p>When you are ready, you can use the "Dump Chat" function. When you select 
+it, ExtractFace:</p>
+<ol>
+<li>Displays a the <strong>Dump Chat</strong> window;</li>
+<li>Checks if you are in the <strong>messages</strong> page;</li>
+<li>If no, displays an error message;</li>
+<li>If yes, proposes a name for the output HTML file.</li>
+</ol>
+<p>If you select the <strong>Download attached document</strong> option, 
+ExtractFace will try to gather attached files in messages like images, videos, 
+or any other files included. If you don't select the option, it doesn't mean 
+that the output HTML file will not contain image in, but these images won't be 
+stored as local content. When the output HTML file is opened in Firefox, you 
+can use "Save as" function to save the result. Firefox will then saved the 
+images as local.</p>
+<p>If you select the <strong>Download image in full size</strong> option, 
+ExtractFace will try to download the full size version of images (images sent 
+by the user), when it's possible. A link in the output HTML file will be added. 
+Be aware that sometimes, the image in full size has the same image name so it 
+will replace the smaller one in the output HTML file.</p>
+<p>If you select the <strong>Hide me</strong> option, your details (profile 
+icon, profile URL and profile Name) will be blacked out.</p>
+<p><strong>Searched part only</strong> option should be checked if you do a 
+search by using the <strong>Search messages in the conversation</strong> 
+function provided by Facebook. Otherwise, the dumped chat will be the last 
+messages that were displayed.</p>
+<p>The output HTML file should look like this:</p>
+<img src="DumpChatSample.png" alt="DumpChatSample" width="836" height="480" border="0">
+<p>Here are some explanations about some elements that can be found in a
+Facebook conversation:</p>
+<ul>
+<li><strong style="text-decoration: underline;">Images sent by the user:</strong> 
+The are a lot of ways to add this kind of files to a conversation, but ExtractFace 
+should support them all. If not, contact the author;</li>
+<li><strong style="text-decoration: underline;">Facebook images:</strong> Like 
+emoticons, stickers or animated images. ExtractFace should support them all. If not, 
+contact the author;</li>
+<li><strong style="text-decoration: underline;">Videos:</strong> If you select the 
+<strong>Download attached document</strong> option, ExtractFace will load the page 
+of the video and gather the video image and the video file. A clickable image will 
+be in the output HTML file. If you didn't select the option, a simple link to the 
+video will be used;</li>
+<li><strong style="text-decoration: underline;">Vocal messages:</strong> Unfortunately, 
+ExtractFace doesn't support vocal messages download for the moment, but it will 
+proposes a name for the audio file (based on the timestamp of the message) to associate 
+it with the correct message. To download vocal messages, you can use something like 
+Video DownloadHelper (<a href="https://www.downloadhelper.net/" target="_blank">
+https://www.downloadhelper.net/</a>);</li>
+<li><strong style="text-decoration: underline;">GPS coordinates:</strong> When available, 
+ExtractFace will gather GPS coordinates and will add a Google map link in the output HTML 
+file;</li>
+<li><strong style="text-decoration: underline;">Notifications:</strong> Ex.: "<em>You 
+missed a call</em>", "<em>Seen</em>", "<em>Sent from Mobile</em>", etc. ExtractFace should 
+support them all. If not, contact the author.</li>
+</ul>
+<p>Directories that could be created by ExtractFace (if needed):</p>
+<ul>
+<li><strong style="text-decoration: underline;">images_[page title]:</strong> For the 
+image files;</li>
+<li><strong style="text-decoration: underline;">videos_[page title]:</strong> For the 
+video files;</li>
+<li><strong style="text-decoration: underline;">pj_[page title]:</strong> For attached 
+documents.</li>
+</ul>
+
+<h3>Dumping huge conversation</h3>
+<p>If you have to dump a huge conversation (thousand of messages) and you can't display 
+it all in Firefox because regular scrolling got stuck before reaching the beginning of the 
+conversation. There is a solution:</p>
+<ol>
+<li>Use regular scrolling and dump the most recent messages;</li>
+<li>Reload the page in Firefox (to free some memory space);</li>
+<li>Until you reach the begining of the conversation:</li>
+<ol>
+<li>Use the <strong>Search messages in the conversation</strong> function in Facebook to 
+search the older message displayed in the part you already dump;</li>
+<li>Use the <strong>Load Older Messages</strong> function in ExtractFace. To prevent crash 
+Firefox, you should set a limit of scrolling (See <a href="#Settings">Settings</a>);</li>
+<li>Dump the displayed part by checking <strong>Searched part only</strong> option;</li>
+<li>Reload the page in Firefox;</li>
+</ol>
+</ol>
+
+<div style="margin: 0 0 0 0;"><a href="#DontForget">Top of the page</a></div>
+<h2 style="margin-top:1.5em;"><a name="Settings">Settings</a></h2>
+<p>There are a few parameters that can be set in ExtractFace.</p>
+<h3>General options</h3>
+<img src="SettingsWindow1.png" alt="SettingsWindow" width="542" height="295" border="0"><br><br>
+<p>Description of general options:</p>
+<ul>
+<li><strong>Time for loading:</strong> time that ExtractFace will wait when a page 
+must be loaded in Firefox. Default value is <strong>2 seconds</strong>. As ExtractFace 
+must often gather content from internet, it can be affected by network latency. It is 
+normal that ExtractFace functions "crash" during some processes. It has been designed 
+for that, but if it happens too much, you can try to increase the value;</li>
+<li><strong>Number of resumes:</strong> number of times that ExtractFace will 
+restart a crashed process before giving up. Default value is <strong>10</strong>. Do not 
+set this value too high because some other errors can cause a crash. If you see that 
+ExtractFace crash at the same place, again and again, without any progress between 
+attempts, it may mean that the network latency is not the problem;</li>
+<li><strong>When page loaded, scroll back to top:</strong> When a page is fully loaded 
+(after scrolling to the bottom), scroll back to top. Default is <strong>checked</strong>. 
+You may uncheck this option if you want to easily see when scrolling fails;</li>
+<li><strong>Check for update at startup:</strong> When ExtractFace starts, check on 
+website for available update of the tool. Default is <strong>checked</strong>;</li>
+<li><strong>Delete temp files when finished:</strong> Applies to most of functions. When 
+ExtractFace downloads page, it saves data in a temp directory. If this options is checked, 
+the temp directory is deleted when function ends;</li>
+<li><strong>Export Lang.ini:</strong> Use this function to translate ExtractFace GUI. 
+See <a href="./ExtractFace.html#Translation">Translation</a> for help about this 
+functionality.</li>
+</ul>
+<h3>Expand options</h3>
+<img src="SettingsWindow2.png" alt="SettingsWindow2" width="542" height="295" border="0">
+<p>These options are related to the <a href="#GeneralFunctions">Expand</a> function and 
+the combined <a href="#GeneralFunctions">Scroll and Expand</a> function. Every option 
+allows to expand a particular type of content: additional text, comments or posts.</p>
+<h3>Chat options</h3>
+<img src="SettingsWindow3.png" alt="SettingsWindow3" width="542" height="295" border="0">
+<p>These options are related to <a href="#ChatFunctions">Chat</a> functions. Description 
+about these options:</p>
+<ul>
+<li><strong>Maximum scrolling:</strong> When you use scroll chat functions, ExtractFace 
+scroll, wait for the additional content to display, scroll again, and so on until it reaches 
+the beginning or the end of the conversation. Unfortunately, it could get stuck if the number 
+of messages is too important. This field can be used to set a limit. The value represent the 
+number of times ExtractFace will scroll, not the number of messages displayed. Default value 
+is 0 which means no limit.</li>
+<li><strong>Text of scrolling link:</strong> When you scroll chat, ExtractFace use the text 
+associated with scrolling buttons to determine if scrolling is finished or to scroll again. 
+The text used for these links depend on the language set for the profil. To be able to scroll 
+chat without the need of changing the profile language, you may add the appropriate message 
+to any of the field. You can set different values by using the <strong>|</strong> symbol. 
+Ex. : Load Older Messages|Charger des messages plus anciens (english|french). To get back 
+to default (english), delete all fields and restart ExtractFace.</li>
+</ul>
+<div style="margin: 0 0 0 0;"><a href="#DontForget">Top of the page</a></div>
+<br>
+<hr>
+
+<p style="color:#000066; font-size: 100%; font-weight: bold;">ExtractFace<br>Copyright 
+(c) 2015 Alain Rioux</p>
+
+</body>
+</html>
