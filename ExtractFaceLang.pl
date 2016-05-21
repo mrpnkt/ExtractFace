@@ -70,16 +70,20 @@ sub loadDefaultStr
   $$refSTR{'remDir'}      = 'Remember this dir';
   $$refSTR{'selDir'}      = 'Select a folder';
   $$refSTR{'dump'}        = 'Dump';
+  $$refSTR{'lblOptions'}  = 'Options';
   $$refSTR{'openXLSX'}    = 'Open output XLSX file';
-  $$refSTR{'downIcons'}   = 'Download profile icons';
   $$refSTR{'save'}        = 'Save';
   $$refSTR{'cancel'}      = 'Cancel';
   $$refSTR{'cancel2'}     = 'Cancelled';
   $$refSTR{'opening'}     = 'Opening';
+  $$refSTR{'writing'}     = 'Writing';
   $$refSTR{'scrolling'}   = 'Scrolling';
   $$refSTR{'downloading'} = 'Downloading';
+  $$refSTR{'saveTab'}     = 'Saving current tab';
+  $$refSTR{'parsing'}     = 'Parsing';
   $$refSTR{'wait'}        = 'Wait';
   $$refSTR{'createXLSX'}  = 'Creating XLSX file';
+  $$refSTR{'createSheet'} = 'Creating sheet';
   $$refSTR{'profilID'}    = 'Profile ID';
   $$refSTR{'image'}       = 'Image';
   $$refSTR{'url'}         = 'URL';
@@ -89,6 +93,7 @@ sub loadDefaultStr
   $$refSTR{'imgPath2'}    = 'Image Path or URL';
   $$refSTR{'originURL'}   = 'Origin URL';
   $$refSTR{'eventURL'}    = 'Event URL';
+  $$refSTR{'count'}       = 'Count';
   $$refSTR{'date'}        = 'Date';
   $$refSTR{'message'}     = 'Message';
   $$refSTR{'warn1T'}      = 'Process running';
@@ -96,11 +101,12 @@ sub loadDefaultStr
   $$refSTR{'warn2T'}      = 'Warning';
   $$refSTR{'warn2'}       = 'You must select at least one option.';
   $$refSTR{'warn3'}       = 'You are not in the right page.';
+  $$refSTR{'warn4'}       = 'You are not on Facebook.';
   $$refSTR{'err1T'}       = 'Error';
   $$refSTR{'err1'}        = 'You must start Firefox MozRepl add-on.';
   $$refSTR{'err2'}        = 'Process crash ! Try to increase the loading time in settings.';
   $$refSTR{'err3'}        = 'Process crash ! Retry.';
-  $$refSTR{'err4'}        = 'Select a valid folder.';
+  $$refSTR{'err4'}        = 'Select a valid folder and title for the album.';
   $$refSTR{'err5'}        = 'Invalid parameters.';
   $$refSTR{'err6'}        = 'Unable to find the event data.';
   $$refSTR{'err7'}        = 'Error connection';
@@ -118,10 +124,10 @@ sub loadDefaultStr
   $$refSTR{'menu1'}    = 'Scroll and Expand';
   $$refSTR{'menu2'}    = 'Scroll';
   $$refSTR{'menu3'}    = 'Expand';
-  $$refSTR{'menu4'}    = 'Cancel';
   $$refSTR{'menu5'}    = 'Dump Albums';
   $$refSTR{'menu6'}    = 'Dump Friends';
   $$refSTR{'menu7'}    = 'Dump Event Members';
+  $$refSTR{'menu17'}   = 'Dump Contributors';
   $$refSTR{'menu8'}    = 'Scroll Chat';
   $$refSTR{'menu9'}    = 'Load Older Messages';
   $$refSTR{'menu10'}   = 'Load Newer Messages';
@@ -140,21 +146,28 @@ sub loadDefaultStr
   $$refSTR{'expandTaskP'}    = 'Expanding in progress';
   $$refSTR{'expandTaskF'}    = 'Expanding finished';
   $$refSTR{'scrExpTaskC'}    = 'Scroll and expand cancelled';
+  $$refSTR{'scrExpTaskF'}    = 'Scroll and expand finished';
   
   # Dump albums
-  $$refSTR{'winAlbums'} = 'Dump albums';
-  $$refSTR{'albumNames'} = 'Album name';
-  $$refSTR{'albumURLs'}  = 'Album url';
-  $$refSTR{'loadAlbum'}  = 'Loading the album page';
-  $$refSTR{'dumpAlbumC'} = 'Dumping albums cancelled';
-  $$refSTR{'dumpAlbumP'} = 'Dumping albums in progress';
-  $$refSTR{'dumpAlbumF'} = 'Dumping albums finished';
+  $$refSTR{'winAlbums'}     = 'Dump albums';
+  $$refSTR{'albumNames'}    = 'Album name';
+  $$refSTR{'albumURLs'}     = 'Album url';
+  $$refSTR{'loadAlbum'}     = 'Loading the album page';
+  $$refSTR{'dumpAlbumC'}    = 'Dumping albums cancelled';
+  $$refSTR{'dumpAlbumP'}    = 'Dumping albums in progress';
+  $$refSTR{'dumpAlbumF'}    = 'Dumping albums finished';
+  $$refSTR{'chPublishDate'} = 'Include publication date';
+  $$refSTR{'openHTML'}      = 'Open output HTML file';
+  $$refSTR{'openAlbumDir'}  = 'Open album folder';
+  $$refSTR{'errorDate'}     = 'Fail to get date!';
   
   # Dump friends
   $$refSTR{'winFriends'}     = 'Dump friends';
   $$refSTR{'friends'}        = 'Friends';
   $$refSTR{'friends2'}       = 'friends';
   $$refSTR{'chIncludeIcons'} = 'Include profile icons';
+  $$refSTR{'chSafeMode'}     = 'Use safe mode';
+  $$refSTR{'friendCat'}      = 'Category';
   $$refSTR{'friendsExtract'} = 'Extracting info for profile ID';
   $$refSTR{'dumpFriendsC'}   = 'Dumping friends cancelled';
   $$refSTR{'dumpFriendsP'}   = 'Dumping friends in progress';
@@ -173,6 +186,19 @@ sub loadDefaultStr
   $$refSTR{'dumpEventP'}    = 'Dumping event members in progress';
   $$refSTR{'dumpEventF'}    = 'Dumping event members finished';
   
+  # Dump Contributors
+  $$refSTR{'contributors'}      = 'Contributors';
+  $$refSTR{'lblContribTypes'}   = 'Types';
+  $$refSTR{'chContribComments'} = 'Comments';
+  $$refSTR{'chContribLikes'}    = 'Likes';
+  $$refSTR{'chContribVPosts'}   = 'Visitor Posts';
+  $$refSTR{'dumpContribC'}      = 'Dumping contributors cancelled';
+  $$refSTR{'dumpContribP'}      = 'Dumping contributors in progress';
+  $$refSTR{'dumpCommentsP'}     = 'Dumping Comments in progress';
+  $$refSTR{'dumpLikesP'}        = 'Dumping Likes in progress (per group)';
+  $$refSTR{'dumpVPostsP'}       = 'Dumping Visitor Posts in progress';
+  $$refSTR{'dumpContribF'}      = 'Dumping contributors finished';
+  
   # Dump Chat
   $$refSTR{'scrollChatC'}   = 'Scrolling chat cancelled';
   $$refSTR{'scrollChatP'}   = 'Scrolling chat in progress';
@@ -186,12 +212,15 @@ sub loadDefaultStr
   $$refSTR{'winChat'}       = 'Dump chat';
   $$refSTR{'chDownloadAD'}  = 'Download attached document (files, audio, video)';
   $$refSTR{'chDownloadImg'} = 'Download image in full size';
+  $$refSTR{'chDownloadVM'}  = 'Download vocal messages';
   $$refSTR{'chHideMe'}      = 'Hide me';
   $$refSTR{'chSearched'}    = 'Searched part only';
+  $$refSTR{'sharedLink'}    = 'Shared link';
   $$refSTR{'video'}         = 'Video';
   $$refSTR{'videoURL'}      = 'Video link';
   $$refSTR{'videoErr'}      = 'Unable to gather video image, link below';
-  $$refSTR{'vocalMsg'}      = 'Vocal message, last';
+  $$refSTR{'vocalMsgLast'}  = 'Vocal message, last';
+  $$refSTR{'vocalMsgFile'}  = 'Vocal message, file';
   $$refSTR{'vocalJoin'}     = 'Use this filename to join';
   $$refSTR{'attached'}      = 'Attached document';
   $$refSTR{'saveChat'}      = 'Saving chat in html file';
@@ -199,10 +228,14 @@ sub loadDefaultStr
   $$refSTR{'dumpChatP'}     = 'Dumping chat in progress';
   $$refSTR{'dumpChatF'}     = 'Dumping chat finished';
   $$refSTR{'zoomImg'}       = 'Viewing image in full size';
+  $$refSTR{'openMobile'}    = 'Searching chat on Facebook mobile';
+  $$refSTR{'searchVMLinks'} = 'Searching vocal messages urls';
   
   # Config
   $$refSTR{'winConfig'}       = 'Settings';
   $$refSTR{'lblGenOpt'}       = 'General';
+  $$refSTR{'Tool'}            = 'Tool';
+  $$refSTR{'Functions'}       = 'Functions';
   $$refSTR{'lblTimeToWait'}   = 'Time for loading';
   $$refSTR{'tfTimeToWaitTip'} = 'When loading page or scrolling, time to wait before any action. Increase this time for more stability. Default is 2.';
   $$refSTR{'lblTimeToWait2'}  = 'seconds';
@@ -211,16 +244,17 @@ sub loadDefaultStr
   $$refSTR{'chOptScrollTop'}  = 'When page loaded, scroll back to top';
   $$refSTR{'chAutoUpdate'}    = 'Check for update at startup';
   $$refSTR{'chDelTempFiles'}  = 'Delete temp files when finished';
+  $$refSTR{'chDebugLogging'}  = 'Enable debug logging';
   $$refSTR{'btnExportLang'}   = 'Export Lang.ini';
+  $$refSTR{'lblScrollOpt'}    = 'Scroll options';
   $$refSTR{'lblExpOpt'}       = 'Expand options';
-  $$refSTR{'lblChatOpt'}      = 'Chat options';
-  $$refSTR{'lblMaxLoading'}   = 'Maximum scrolling';
-  $$refSTR{'tfMaxLoadingTip'} = 'Maximum number of times ExtractFace will scroll chat. Default is 0 (No maximum).';
-  $$refSTR{'lblTextLink'}     = 'Text of scrolling link';
-  $$refSTR{'lblRegular'}      = 'Regular';
-  $$refSTR{'lblOlder'}        = 'Older';
-  $$refSTR{'lblNewer'}        = 'Newer';
-  $$refSTR{'lblTextLinkTip'}  = 'Depend on the language set in the profil.';
+  $$refSTR{'chOptSeemore'}    = 'See more';
+  $$refSTR{'chOptComments'}   = 'View more comments, replies';
+  $$refSTR{'chOptPosts'}      = 'More posts';
+  $$refSTR{'chOptTranslate'}  = 'See translation';
+  $$refSTR{'lblMaxLoading'}   = 'Maximum scrolling (chat)';
+  $$refSTR{'tfMaxScrollTip'}  = 'Maximum number of times ExtractFace will scroll. Default is 0 (No maximum).';
+  $$refSTR{'lblMaxScroll'}    = 'Maximum scrolling (other)';
   
   # Misc
   $$refSTR{'winPb'}   = 'Progress';

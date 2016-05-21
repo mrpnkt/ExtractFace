@@ -63,8 +63,8 @@
 			<param name="ImageNumber" value="9">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
-			<param name="Name" value="General Functions">
-			<param name="Local" value="Documentation.html#GeneralFunctions">
+			<param name="Name" value="Scroll and Expand">
+			<param name="Local" value="Documentation.html#ScrollExpand">
 			<param name="ImageNumber" value="9">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
@@ -81,6 +81,10 @@
 			<param name="Name" value="Dump Event Members">
 			<param name="Local" value="Documentation.html#DumpEventMembers">
 			<param name="ImageNumber" value="9">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Dump Contributors">
+			<param name="Local" value="Documentation.html#DumpContributors">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Chat Functions">

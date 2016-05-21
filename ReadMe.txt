@@ -1,5 +1,5 @@
 ExtractFace
-Description : Dump Facebook stuff for analysis or reporting purposes
+Description : Dump Facebook stuff for analysis or reporting purposes.
 Author 		: Alain Rioux (admin@le-tools.com)
 WebSite		: http://le-tools.com/ExtractFace.html
 GitHub		: https://github.com/arioux/ExtractFace
@@ -49,12 +49,28 @@ What do you need
 * When using ExtractFace, be sure that MozRepl is enabled. You can check the 
 "Activate on startup" option so it's enabled by default when you use Firefox;
 
-Important: If you connect to a Facebook account while using ExtractFace 
-(which it is recommended by the way), you should set the langage to "english".
 
 
 Versions History
 ----------------
+* Version 3.0
+	* New:
+		* Dump Contributors (Comments, Likes, Visitor Posts)
+		* Dump album: "HTML album page"
+		* Expand option: See Translation
+		* Dump friends: Now possible to get all friend categories
+		* Dump chat: Added support for vocal messages
+		* Dump chat: Added support for other notifications
+		* Dump chat: Added support for Shared Links
+		* Dump chat: Translation of scrolling links is not required anymore
+		* Settings Window has been rebuilded
+		* New Debug logging option
+		* New max scrolling option
+	- Fixed:
+		- Fixed scroll and expand issue when scrolled page is huge... Now 
+		  it scrolls one time, expands, scrolls again, expands, and so on...
+		- Fixed dump album issue: some pictures were not downloaded
+		- Improved crash recovery
 * Version 2.0
 	- First public release.
 	- Now licensed under GPLv3

@@ -1,7 +1,7 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 <html>
 <!--
-# Copyright (C) 2015  Alain Rioux (le-tools.com)
+# Copyright (C) 2015-2016  Alain Rioux (le-tools.com)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,22 +26,22 @@
 <table border=0 cellspacing=0 cellpadding=0>
 <tr>
 <td width="80px" align="center" rowspan=2><img src="ExtractFace48.png" alt="Logo" width="48" height="48" border="0"></td>
-<td align="left" valign="center" style="color:#000066; font-size: 100%; font-weight: bold;">ExtractFace<br>Copyright (c) 2015 Alain Rioux<br></td></tr>
+<td align="left" valign="center" style="color:#000066; font-size: 100%; font-weight: bold;">ExtractFace<br>Copyright (c) 2015-2016 Alain Rioux<br></td></tr>
 <tr><td align="left" style="color:#000066; font-size: 90%;">See <a href="#Credits">Credits</a> about the logo</td></tr>
 </table><br>
 
 <h2><a name="WhatIsIt">What is it</a></h2>
 <p>Investigators, researchers or other analysts often have to get local 
-copies of Facebook data. It can be for a lot of reasons like submitting 
-Facebook data as evidence, doing advanced offline analysis, etc. But 
-Facebook interface has not been designed for that and does not provide 
-printing or saving functions. Even for a user that want a copy of a 
-conversation in his profile, there is no simple solution.</p>
-<p>ExtractFace has been designed to help people to collect data from 
+copies of Facebook data. It can be necessary for a lot of reasons like 
+submitting Facebook data as evidence, doing advanced offline analysis, 
+etc. But Facebook interface has not been designed for that and does not 
+provide printing or saving functions. Even for a user that want a copy 
+of a conversation in his profile, there is no simple solution.</p>
+<p>ExtractFace has been designed to help people to extract data from 
 Facebook. It provides usefull functions to automate a lot of tasks 
 that have to be done manually otherwise. See documentation for more 
 details.</p>
-<img src="ExtractFace_menu.png" alt="Menu" width="217" height="392" border="0">
+<img src="ExtractFace_menu.png" alt="Menu" width="217" height="368" border="0">
 
 <h2><a name="HowItWorks">How it works</a></h2>
 <p>ExtractFace doesn't require any installation. In order to start using 
@@ -52,7 +52,7 @@ So you can crawl Facebook as normal with Firefox and use ExtractFace
 to automate some annoying things like scrolling or clicking in order to 
 get additional content. When the content is fully loaded in your browser, 
 you can print to PDF, capture screen, or use ExtractFace again to 
-collect the data in a usefull way.</p>
+extract the data in a usefull way.</p>
 
 <h2><a name="WhatDoYouNeed">What do you need</a></h2>
 <ul>
@@ -62,20 +62,43 @@ https://www.mozilla.org</a>)</li>
 <li>MozRepl add-on (<a href="https://github.com/bard/mozrepl" 
 target="_blank">https://github.com/bard/mozrepl</a>, to install: 
 <a href="https://addons.mozilla.org/en-US/firefox/addon/mozrepl/" 
-target="_blank">https://addons.mozilla.org/en-US/firefox/addon/mozrepl/</a>): 
-When using ExtractFace, be sure that MozRepl is enabled. You can check the 
-<strong>Activate on startup</strong> option so it's enabled by default 
-when you use Firefox;</li>
+target="_blank">https://addons.mozilla.org/en-US/firefox/addon/mozrepl/</a>)</li>
+<li>A Facebook account</li>
 </ul>
-<p>Important: If you connect to a Facebook account while using ExtractFace 
-(which it is recommended by the way), you must set the langage of the 
-profile to "english".</p>
 
 <h2><a name="VersionsHistory">Versions History</a></h2>
 <table border=1 cellspacing=0 cellpadding=2>
 <tr>
 <td align="center" style="font-weight: bold;">Version</td>
 <td align="center" style="font-weight: bold;">Comments</td>
+</tr>
+<tr>
+<td align="center" valign="top">3.0</td>
+<td>
+<ul>
+<li>New:</li>
+<ul>
+<li>Dump Contributors (Comments, Likes, Visitor Posts)</li>
+<li>Dump album: "HTML album page"</li>
+<li>Expand option: See Translation</li>
+<li>Dump friends: Now possible to get all friend categories</li>
+<li>Dump chat: Added support for vocal messages</li>
+<li>Dump chat: Added support for other notifications</li>
+<li>Dump chat: Added support for Shared Links</li>
+<li>Dump chat: Translation of scrolling links is not required anymore</li>
+<li>Settings Window has been rebuilded</li>
+<li>New Debug logging option</li>
+<li>New max scrolling option</li>
+</ul>
+<li>Fixed:</li>
+<ul>
+<li>Fixed scroll and expand issue when scrolled page is huge... 
+Now it scrolls one time, expands, scrolls again, expands, and so on...</li>
+<li>Fixed dump album issue: some pictures were not downloaded</li>
+<li>Improved crash recovery</li>
+</ul>
+</ul>
+</td>
 </tr>
 <tr>
 <td align="center" valign="top">2.0</td>
@@ -182,25 +205,37 @@ directory of the tool.</p>
 <td align="center" style="font-weight: bold;">For Version</td>
 </tr>
 <tr>
-<td><a href="http://www.le-tools.com/ExtractFace/fr/Lang.ini" target="_blank">Français</a></td>
+<td><a href="http://www.le-tools.com/ExtractFace/fr/Lang.ini" target="_blank">French</a></td>
 <td>Alain Rioux</td>
-<td align="center" >2015-11-20</td>
+<td align="center" >2016-05-16</td>
+<td align="center" >3.0</td>
+</tr>
+<tr>
+<td><a href="http://www.le-tools.com/ExtractFace/fr/Lang.ini" target="_blank">German</a></td>
+<td>e.to</td>
+<td align="center" >2016-04-04</td>
 <td align="center" >2.0</td>
+</tr>
 </table><br>
 
 
 <h2><a name="KnownProblems">Known Problems</a></h2>
 <ul>
-<li>ExtractFace is an experimental tool that have to be updated 
-often to follow any change in Facebook code.</li>
+<li>ExtractFace is an experimental tool that has to be often updated 
+to follow any change in Facebook code.</li>
 <li>ExtractFace may also be affected by any updates to Mozilla 
-Firefox or the MozRepl add-on.</li>
-<li>ExtractFace support utf8 but some encoding problems can happen anyway.</li>
+Firefox or the MozRepl add-on (It never happends until now, but who 
+knows the future?).</li>
+<li>Encoding problems may happen (I don't have time to test every 
+language, but if you have an issue, let me know!).</li>
+<li>FAT32: Some fonctions or options (ex.: Include profile icons) 
+will not work properly if you select a FAT32 volume as the 
+destination directory.</li>
 </ul>
 
 
 <h2><a name="License">License</a></h2>
-<p>Copyright (C) 2015  Alain Rioux</p>
+<p>Copyright (C) 2015-2016  Alain Rioux</p>
 <p>This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
@@ -225,15 +260,15 @@ target="_blank">http://le-tools.com/about.php</a>.</p>
 (<a href="http://www.land-of-web.com" target="_blank">http://www.land-of-web.com</a>) and distributed as freeware.</p>
 <p>Most of other icons have been created by Icojam 
 (<a href="http://www.icojam.com/" target="_blank">http://www.icojam.com/</a>) and are licensed as "Public Domain", 
-except for small <strong>Open folder</strong> icon which has 
-been created by <strong>PixelMixer</strong> and distributed as 
-freeware.</p>
+except for small <strong>Open folder</strong> icon (created by <strong>PixelMixer</strong>) and <strong>Dump chat 
+window</strong> logo (created by <a href="http://dribbble.com/tristanedwards" target="_blank">Tristan 
+Edwards</a>). Both are distributed as freewares.</p>
 
 <br>
 <hr>
 
 <p style="color:#000066; font-size: 100%; font-weight: bold;">ExtractFace<br>Copyright 
-(c) 2015 Alain Rioux</p>
+(c) 2015-2016 Alain Rioux</p>
 
 </body>
 </html>
