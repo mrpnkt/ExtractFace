@@ -1,8 +1,10 @@
 ExtractFace
-Description : Dump Facebook stuff for analysis or reporting purposes
-Author 		: Alain Rioux (admin@le-tools.com)
-WebSite		: http://le-tools.com/ExtractFace.html
-GitHub		: https://github.com/arioux/ExtractFace
+Description 	: Dump Facebook stuff for analysis or reporting purposes.
+Author 				: Alain Rioux (admin@le-tools.com)
+WebSite				: http://le-tools.com/ExtractFace.html
+Documentation	: http://le-tools.com/ExtractFaceDoc.html
+GitHub				: https://github.com/arioux/ExtractFace
+FossHub       : http://code.fosshub.com/ExtractFace
 
 
 Development
@@ -29,6 +31,21 @@ following modules installed:
 - Win32-GUI (v1.08)
 - Win32-Process (v0.16)
 - WWW-Mechanize-Firefox (v0.78)
+
+
+To do
+-----
+
+- Dump friends
+	- Keep bigger profile icon (when duplicate filename) except for following/followers
+- Dump event members: 
+	- Add possibility to exceed the 500 members limit
+- Dump chat:
+	- Add support for animated image (animation code)
+	- Gather Sent from Mobile, Sent from Messenger near date
+- Dump Visitor Posts (posts, not contributors)
+- Report in other formats: HTML, CSV, TSV, or XLSX
+
 
 
 Packaging

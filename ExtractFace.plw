@@ -6,8 +6,8 @@
 # GitHub		  : https://github.com/arioux/ExtractFace
 # Description : Dump Facebook stuff for analysis or reporting purposes
 # Creation    : 2015-08-01
-# Modified    : 2016-05-21
-my $VERSION   = "3.0";
+# Modified    : 2016-07-07
+my $VERSION   = "4.0";
 # Author      : Alain Rioux (admin@le-tools.com)
 #
 # Copyright (C) 2015-2016  Alain Rioux (le-tools.com)
@@ -33,7 +33,7 @@ my $VERSION   = "3.0";
 use strict;
 use utf8;
 use arybase;
-use Encode qw(decode encode decode_utf8);
+use Encode qw(encode decode);
 use Excel::Writer::XLSX;
 use File::Copy::Recursive qw(rcopy);
 use File::Path qw(remove_tree);
@@ -49,6 +49,7 @@ use MozRepl::RemoteObject;
 use MozRepl;
 use threads;
 use threads::shared;
+use Time::Local;
 use Time::HiRes qw(usleep);
 use URI::Escape::JavaScript qw(unescape);
 use Win32::API();
@@ -72,12 +73,15 @@ my ($winICO, $logoBmp, $albumBmp, $friendsBmp, $eventBmp, $contribBmp, $chatBmp,
 #------------------------------------------------------------------------------#
 my $PROGDIR = $0;                                                              # Program path
 while (chop($PROGDIR) ne "\\") { }                                             # Dir only
-my $CONFIG_FILE = "$PROGDIR\\ExtractFace.ini";                                 # Configuration file
-my $DEBUG_FILE  = "$PROGDIR\\debug.log";                                       # Debug log file
-my $LANG_FILE   = "$PROGDIR\\Lang.ini";                                        # Langage file
-my $HELP_FILE   = "$PROGDIR\\Documentation.chm";                               # Help file
-my $URL_TOOL    = 'http://www.le-tools.com/download/ExtractFace.zip';          # Url of the tool
-my $URL_VER     = 'http://www.le-tools.com/download/ExtractFaceVer.txt';       # Url of the version file
+my $USERDIR;                                                                   # User path
+if (-d "$ENV{'APPDATA'}\\ExtractFace") { $USERDIR = "$ENV{'APPDATA'}\\ExtractFace"; }
+else                                   { $USERDIR = $PROGDIR;                       }
+my $CONFIG_FILE  = "$USERDIR\\ExtractFace.ini";                                # Configuration file
+my $DEBUG_FILE   = "$USERDIR\\debug.log";                                      # Debug log file
+my $LANG_FILE    = "$USERDIR\\Lang.ini";                                       # Langage file
+my $URL_DOC      = "http://le-tools.com/ExtractFaceDoc.html";                  # Online documentation
+my $URL_TOOL     = 'http://le-tools.com/ExtractFace.html#Download';            # Url of the tool (download)
+my $URL_VER      = 'http://www.le-tools.com/download/ExtractFaceVer.txt';      # Url of the version file
 my %CONFIG;                                                                    # Configuration
 my %STR;                                                                       # Strings for GUI
 my $ARROW       :shared;                                                       # Arrow pointer
@@ -116,7 +120,7 @@ my $screen    = Win32::GUI::GetDesktopWindow(); # Screen resolution
 my $scrnX     = Win32::GUI::Width($screen);     # Width
 my $scrnY     = Win32::GUI::Height($screen);    # Height
 my $winWidth  = 520;
-my $winHeight = 170;
+my $winHeight = 195;
 my $winPosX   = ($scrnX - $winWidth)  / 2;
 my $winPosY   = ($scrnY - $winHeight) / 2;
 
@@ -186,39 +190,45 @@ $win->AddNotifyIcon(-name    => "Tray"           ,
                     -balloon => 1                , );
 
 # Main section
-$win->AddLabel( -name        => 'lblLogo'           ,
-                -size        => [128,128]           ,
-                -pos         => [  0,  5]           ,
-                -bitmap      => $logoBmp            ,
-                -background  => [255, 255, 255]     , );
-$win->AddLabel( -name        => 'lblText1'          ,
-                -size        => [ 90, 65]           ,
-                -pos         => [135, 10]           ,
-                -font        => $font10             ,
-                -foreground  => [0  , 0  , 102]     ,
-                -background  => [255, 255, 255]     ,
-                -text        => $STR{'update4'}.":\n".$STR{'website'}.":\n".$STR{'author'}.":\n".$STR{'translatedBy'}.':', );
-$win->AddLabel( -name        => 'lblText2'          ,
-                -size        => [270, 65]           ,
-                -pos         => [230, 10]           ,
-                -font        => $font10             ,
-                -foreground  => [185, 154,   0]     ,
-                -background  => [255, 255, 255]     ,
-                -text        =>  "$VERSION\nhttp://www.le-tools.com/\nAlain Rioux (admin\@le-tools.com)\n$STR{'translatorName'}", );
-$win->AddLabel( -name        => 'lblText3'          ,
-                -size        => [300, 20]           ,
-                -pos         => [135, 80]           ,
-                -font        => $font10             ,
-                -foreground  => [0  , 0  , 102]     ,
-                -background  => [255, 255, 255]     ,
-                -text        => '© Copyright 2015-2016 Alain Rioux', );
-$win->AddLabel( -name        => 'lblText4'          ,
-                -size        => [340, 20]           ,
-                -pos         => [160,110]           ,
-                -font        => $font10             ,
-                -foreground  => [255,   0,   0]     ,
-                -background  => [255, 255, 255]     ,
-                -text        => '>> '.$STR{'lblText4'}.' <<', );
+$win->AddLabel(   -name        => 'lblLogo'           ,
+                  -size        => [128,128]           ,
+                  -pos         => [  0,  5]           ,
+                  -bitmap      => $logoBmp            ,
+                  -background  => [255, 255, 255]     , );
+$win->AddLabel(   -name        => 'lblText1'          ,
+                  -size        => [ 90, 65]           ,
+                  -pos         => [135, 10]           ,
+                  -font        => $font10             ,
+                  -foreground  => [0  , 0  , 102]     ,
+                  -background  => [255, 255, 255]     ,
+                  -text        => $STR{'update4'}.":\n".$STR{'website'}.":\n".$STR{'author'}.":\n".$STR{'translatedBy'}.':', );
+$win->AddLabel(   -name        => 'lblText2'          ,
+                  -size        => [270, 65]           ,
+                  -pos         => [230, 10]           ,
+                  -font        => $font10             ,
+                  -foreground  => [185, 154,   0]     ,
+                  -background  => [255, 255, 255]     ,
+                  -text        =>  "$VERSION\nhttp://www.le-tools.com/\nAlain Rioux (admin\@le-tools.com)\n$STR{'translatorName'}", );
+$win->AddLabel(   -name        => 'lblText3'          ,
+                  -size        => [300, 20]           ,
+                  -pos         => [135, 80]           ,
+                  -font        => $font10             ,
+                  -foreground  => [0  , 0  , 102]     ,
+                  -background  => [255, 255, 255]     ,
+                  -text        => '© Copyright 2015-2016 Alain Rioux', );
+$win->AddLabel(   -name        => 'lblText4'          ,
+                  -size        => [340, 22]           ,
+                  -pos         => [180,110]           ,
+                  -font        => $font10             ,
+                  -foreground  => [255,   0,   0]     ,
+                  -background  => [255, 255, 255]     ,
+                  -text        => '>> '.$STR{'lblText4'}.' <<', );
+$win->AddCheckbox(-name        => 'chStartMinimized'  ,
+                  -size        => [300, 22]           ,
+                  -pos         => [ 10,140]           ,
+                  -text        => $STR{'chStartMinimized'},
+                  -background  => [255, 255, 255]     ,
+                  -font        => $font10             , );
 
 # Load taskbar menu
 my $trayMenu = Win32::GUI::Menu->new(
@@ -633,7 +643,7 @@ my $winContrib = Win32::GUI::DialogBox->new(  -name        => 'winContrib'      
                                               -parent      => $win                           ,
                                               -text        => $STR{'menu17'}                 ,
                                               -pos         => [($scrnX-650)/2,($scrnY-295)/2],
-                                              -size        => [650,295]                      ,
+                                              -size        => [600,320]                      ,
                                               -background  => [255, 255, 255]                ,
                                               -hasmaximize => 0                              ,
                                               -hasminimize => 1                              ,
@@ -680,61 +690,72 @@ $winContrib->AddCheckbox(         -name       => 'chSaveContribDir'             
                                   -font       => $font10                        ,
                                   -tabstop    => 1                              ,
                                   -checked    => 0                              , );
-$winContrib->AddLabel(            -name       => 'lblContribOpt'                ,
-                                  -size       => [ 75, 22]                      ,
-                                  -pos        => [140, 97]                      ,
-                                  -text       => $STR{'lblOptions'}.':'         ,
-                                  -font       => $font10                        ,
-                                  -background => [255, 255, 255]                , );
-$winContrib->AddCheckbox(         -name       => 'chContribProfileIcons'        ,
-                                  -size       => [170, 22]                      ,
-                                  -pos        => [220, 95]                      ,
-                                  -text       => $STR{'chIncludeIcons'}         ,
-                                  -background => [255, 255, 255]                ,
-                                  -font       => $font10                        ,
-                                  -checked    => 0                              , );
-$winContrib->AddCheckbox(         -name       => 'chContribOpenXLSX'            ,
-                                  -size       => [170, 22]                      ,
-                                  -pos        => [395, 95]                      ,
-                                  -text       => $STR{'openXLSX'}               ,
-                                  -background => [255, 255, 255]                ,
-                                  -font       => $font10                        ,
-                                  -checked    => 0                              , );
 
-# Contributor categories
+# Types section
 $winContrib->AddLabel(            -name       => 'lblContribCat'                ,
-                                  -size       => [495, 22]                      ,
-                                  -pos        => [140,127]                      ,
+                                  -size       => [445, 22]                      ,
+                                  -pos        => [140,102]                      ,
                                   -text       => $STR{'lblContribTypes'}        ,
                                   -font       => $fontGB                        ,
                                   -background => [206, 221, 255]                , );
 $winContrib->AddCheckbox(         -name       => 'chContribComments'            ,
-                                  -size       => [400, 20]                      ,
-                                  -pos        => [140,157]                      ,
+                                  -size       => [105, 20]                      ,
+                                  -pos        => [140,132]                      ,
                                   -text       => $STR{'chContribComments'}      ,
                                   -background => [255, 255, 255]                ,
                                   -font       => $font10                        ,
                                   -tabstop    => 1                              ,
                                   -checked    => 0                              , );
 $winContrib->AddCheckbox(         -name       => 'chContribLikes'               ,
-                                  -size       => [220, 20]                      ,
-                                  -pos        => [140,179]                      ,
+                                  -size       => [ 80, 20]                      ,
+                                  -pos        => [250,132]                      ,
                                   -text       => $STR{'chContribLikes'}         ,
                                   -background => [255, 255, 255]                ,
                                   -font       => $font10                        ,
                                   -tabstop    => 1                              ,
                                   -checked    => 0                              , );
 $winContrib->AddCheckbox(         -name       => 'chContribVPosts'              ,
-                                  -size       => [240, 20]                      ,
-                                  -pos        => [140,201]                      ,
+                                  -size       => [250, 20]                      ,
+                                  -pos        => [335,132]                      ,
                                   -text       => $STR{'chContribVPosts'}        ,
                                   -background => [255, 255, 255]                ,
                                   -font       => $font10                        ,
                                   -tabstop    => 1                              ,
                                   -checked    => 0                              , );
+
+# Options section
+$winContrib->AddLabel(            -name       => 'lblContribOpt'                ,
+                                  -size       => [445, 22]                      ,
+                                  -pos        => [140,162]                      ,
+                                  -text       => $STR{'lblOptions'}             ,
+                                  -font       => $fontGB                        ,
+                                  -background => [206, 221, 255]                , );
+$winContrib->AddCheckbox(         -name       => 'chContribProfileIcons'        ,
+                                  -size       => [170, 22]                      ,
+                                  -pos        => [140,192]                      ,
+                                  -text       => $STR{'chIncludeIcons'}         ,
+                                  -background => [255, 255, 255]                ,
+                                  -font       => $font10                        ,
+                                  -checked    => 0                              , );
+$winContrib->AddCheckbox(         -name       => 'chContribOpenXLSX'            ,
+                                  -size       => [210, 22]                      ,
+                                  -pos        => [325,192]                      ,
+                                  -text       => $STR{'openXLSX'}               ,
+                                  -background => [255, 255, 255]                ,
+                                  -font       => $font10                        ,
+                                  -checked    => 0                              , );
+$winContrib->AddCheckbox(         -name       => 'chContribDontScrollVPosts'    ,
+                                  -size       => [300, 22]                      ,
+                                  -pos        => [140,217]                      ,
+                                  -text       => $STR{'dontScrollVPosts'}       ,
+                                  -background => [255, 255, 255]                ,
+                                  -font       => $font10                        ,
+                                  -checked    => 0                              ,
+                                  -disabled   => 1                              , );
+
 $winContrib->AddButton(           -name       => 'btnContribOk'                 ,
                                   -size       => [ 85, 30]                      ,
-                                  -pos        => [310,227]                      ,
+                                  -pos        => [310,250]                      ,
                                   -text       => $STR{'dump'}                   ,
                                   -font       => $font10                        ,
                                   -disabled   => 1                              ,
@@ -746,12 +767,12 @@ $winContrib->AddButton(           -name       => 'btnContribOk'                 
 # Dump Chat window
 #------------------------------------------------------------------------------#
 my $winChatPosX = ($scrnX - 650) / 2;
-my $winChatPosY = ($scrnY - 260) / 2;
+my $winChatPosY = ($scrnY - 295) / 2;
 my $winChat = Win32::GUI::DialogBox->new(  -name        => 'winChat'                      ,
                                            -parent      => $win                           ,
                                            -text        => $STR{'winChat'}                ,
                                            -pos         => [$winChatPosX, $winChatPosY]   ,
-                                           -size        => [650,270]                      ,
+                                           -size        => [640,340]                      ,
                                            -background  => [255, 255, 255]                ,
                                            -hasmaximize => 0                              ,
                                            -hasminimize => 1                              ,
@@ -783,12 +804,12 @@ $winChat->AddLabel(               -name       => 'lblDirSaveChat'               
                                   -font       => $font10                        ,
                                   -background => [255, 255, 255]                , );
 $winChat->AddTextfield(           -name       => 'tfDirSaveChat'                ,
-                                  -size       => [340, 22]                      ,
+                                  -size       => [380, 22]                      ,
                                   -pos        => [220, 45]                      ,
                                   -tabstop    => 1                              , );
 $winChat->AddButton(              -name       => 'btnDirSaveChat'               ,
                                   -size       => [ 22, 22]                      ,
-                                  -pos        => [562, 45]                      ,
+                                  -pos        => [602, 45]                      ,
                                   -bitmap     => $browseBmp                     ,
                                   -tabstop    => 1                              , );
 $winChat->AddCheckbox(            -name       => 'chSaveChatDir'                ,
@@ -799,50 +820,148 @@ $winChat->AddCheckbox(            -name       => 'chSaveChatDir'                
                                   -font       => $font10                        ,
                                   -tabstop    => 1                              ,
                                   -checked    => 0                              , );
-$winChat->AddCheckbox(            -name       => 'chDownloadAD'                 ,
-                                  -size       => [400, 20]                      ,
-                                  -pos        => [220, 92]                      ,
-                                  -text       => $STR{'chDownloadAD'}           ,
+
+# Options
+$winChat->AddLabel(               -name       => 'lblChatOpt'                   ,
+                                  -size       => [485, 22]                      ,
+                                  -pos        => [140,100]                      ,
+                                  -text       => $STR{'lblOptions'}             ,
+                                  -font       => $fontGB                        ,
+                                  -background => [206, 221, 255]                , );
+$winChat->AddRadioButton(         -name       => 'rbChatNormalMode'             ,
+                                  -size       => [125, 22]                      ,
+                                  -pos        => [140,125]                      ,
                                   -background => [255, 255, 255]                ,
+                                  -text       => $STR{'rbChatNormalMode'}       ,
                                   -font       => $font10                        ,
                                   -tabstop    => 1                              ,
-                                  -checked    => 0                              , );
-$winChat->AddCheckbox(            -name       => 'chDownloadImg'                ,
-                                  -size       => [400, 20]                      ,
-                                  -pos        => [240,112]                      ,
-                                  -text       => $STR{'chDownloadImg'}          ,
+                                  -checked    => 1                              ,
+                                  -group      => 1                              , );
+$winChat->AddRadioButton(         -name       => 'rbChatSafeMode'               ,
+                                  -size       => [140, 22]                      ,
+                                  -pos        => [270,125]                      ,
                                   -background => [255, 255, 255]                ,
-                                  -font       => $font10                        ,
-                                  -tabstop    => 1                              ,
-                                  -checked    => 0                              ,
-                                  -disabled   => 1                              , );
-$winChat->AddCheckbox(            -name       => 'chDownloadVM'                 ,
-                                  -size       => [400, 20]                      ,
-                                  -pos        => [220,132]                      ,
-                                  -text       => $STR{'chDownloadVM'}           ,
-                                  -background => [255, 255, 255]                ,
-                                  -font       => $font10                        ,
-                                  -tabstop    => 1                              ,
-                                  -checked    => 0                              , );
-$winChat->AddCheckbox(            -name       => 'chHideMe'                     ,
-                                  -size       => [220, 20]                      ,
-                                  -pos        => [220,152]                      ,
-                                  -text       => $STR{'chHideMe'}               ,
-                                  -background => [255, 255, 255]                ,
+                                  -text       => $STR{'chSafeMode'}             ,
                                   -font       => $font10                        ,
                                   -tabstop    => 1                              ,
                                   -checked    => 0                              , );
 $winChat->AddCheckbox(            -name       => 'chSearched'                   ,
-                                  -size       => [240, 20]                      ,
-                                  -pos        => [220,172]                      ,
+                                  -size       => [210, 20]                      ,
+                                  -pos        => [415,125]                      ,
                                   -text       => $STR{'chSearched'}             ,
                                   -background => [255, 255, 255]                ,
                                   -font       => $font10                        ,
                                   -tabstop    => 1                              ,
                                   -checked    => 0                              , );
+$winChat->AddLabel(               -name       => 'lblChatDownload'              ,
+                                  -size       => [ 75, 22]                      ,
+                                  -pos        => [140,155]                      ,
+                                  -text       => $STR{'download'}.':'           ,
+                                  -font       => $font10                        ,
+                                  -background => [255, 255, 255]                , );
+$winChat->AddCheckbox(            -name       => 'chDownloadImg'                ,
+                                  -size       => [100, 20]                      ,
+                                  -pos        => [220,155]                      ,
+                                  -text       => $STR{'chDownloadImg'}          ,
+                                  -background => [255, 255, 255]                ,
+                                  -font       => $font10                        ,
+                                  -tabstop    => 1                              ,
+                                  -checked    => 0                              , );
+$winChat->AddCheckbox(            -name       => 'chDownloadImgFull'            ,
+                                  -size       => [100, 20]                      ,
+                                  -pos        => [375,155]                      ,
+                                  -text       => $STR{'chFullSize'}             ,
+                                  -background => [255, 255, 255]                ,
+                                  -font       => $font10                        ,
+                                  -tabstop    => 1                              ,
+                                  -disabled   => 1                              ,
+                                  -checked    => 0                              , );
+$winChat->AddCheckbox(            -name       => 'chDownloadVid'                ,
+                                  -size       => [105, 20]                      ,
+                                  -pos        => [520,155]                      ,
+                                  -text       => $STR{'chDownloadVid'}          ,
+                                  -background => [255, 255, 255]                ,
+                                  -font       => $font10                        ,
+                                  -tabstop    => 1                              ,
+                                  -checked    => 0                              , );
+$winChat->AddCheckbox(            -name       => 'chDownloadAD'                 ,
+                                  -size       => [150, 20]                      ,
+                                  -pos        => [220, 175]                     ,
+                                  -text       => $STR{'chDownloadAD'}           ,
+                                  -background => [255, 255, 255]                ,
+                                  -font       => $font10                        ,
+                                  -tabstop    => 1                              ,
+                                  -checked    => 0                              , );
+$winChat->AddCheckbox(            -name       => 'chDownloadVM'                 ,
+                                  -size       => [140, 20]                      ,
+                                  -pos        => [375,175]                      ,
+                                  -text       => $STR{'chDownloadVM'}           ,
+                                  -background => [255, 255, 255]                ,
+                                  -font       => $font10                        ,
+                                  -tabstop    => 1                              ,
+                                  -checked    => 0                              , );
+$winChat->AddLabel(               -name       => 'lblChatDates'                 ,
+                                  -size       => [ 75, 22]                      ,
+                                  -pos        => [140,200]                      ,
+                                  -text       => $STR{'dates'}.':'              ,
+                                  -font       => $font10                        ,
+                                  -background => [255, 255, 255]                , );
+$winChat->AddRadioButton(         -name       => 'rbChatDatesAll'               ,
+                                  -size       => [ 50, 22]                      ,
+                                  -pos        => [220,200]                      ,
+                                  -background => [255, 255, 255]                ,
+                                  -text       => $STR{'rbChatDatesAll'}         ,
+                                  -font       => $font10                        ,
+                                  -tabstop    => 1                              ,
+                                  -checked    => 1                              ,
+                                  -group      => 1                              , );
+$winChat->AddRadioButton(         -name       => 'rbChatDatesRange'             ,
+                                  -size       => [ 60, 22]                      ,
+                                  -pos        => [220,220]                      ,
+                                  -background => [255, 255, 255]                ,
+                                  -text       => $STR{'rbChatDatesRange'}       ,
+                                  -font       => $font10                        ,
+                                  -tabstop    => 1                              , );
+$winChat->AddLabel(               -name       => 'lblChatDatesRangeS'           ,
+                                  -size       => [ 50, 22]                      ,
+                                  -pos        => [285,223]                      ,
+                                  -text       => $STR{'start'}.':'              ,
+                                  -align      => 'right'                        ,
+                                  -font       => $font10                        ,
+                                  -background => [255, 255, 255]                , );
+$winChat->AddDateTime(            -name       => 'dtChatDatesRangeS'            ,
+                                  -size       => [ 90, 22]                      ,
+                                  -pos        => [340,220]                      ,
+                                  -font       => $font10                        ,
+                                  -background => [255, 255, 255]                ,
+                                  -format     => 'shortdate'                    ,
+                                  -tabstop    => 1                              , );
+$winChat->AddLabel(               -name       => 'lblChatDatesRangeE'           ,
+                                  -size       => [ 40, 22]                      ,
+                                  -pos        => [435,223]                      ,
+                                  -text       => $STR{'end'}.':'                ,
+                                  -align      => 'right'                        ,
+                                  -font       => $font10                        ,
+                                  -background => [255, 255, 255]                , );
+$winChat->AddDateTime(            -name       => 'dtChatDatesRangeE'            ,
+                                  -size       => [ 90, 22]                      ,
+                                  -pos        => [480,220]                      ,
+                                  -font       => $font10                        ,
+                                  -background => [255, 255, 255]                ,
+                                  -format     => 'shortdate'                    ,
+                                  -tabstop    => 1                              , );
+$winChat->AddCheckbox(            -name       => 'chHideMe'                     ,
+                                  -size       => [220, 20]                      ,
+                                  -pos        => [140,245]                      ,
+                                  -text       => $STR{'chHideMe'}               ,
+                                  -background => [255, 255, 255]                ,
+                                  -font       => $font10                        ,
+                                  -tabstop    => 1                              ,
+                                  -checked    => 0                              , );
+
 $winChat->AddButton(              -name       => 'btnChatOk'                    ,
                                   -size       => [ 85, 30]                      ,
-                                  -pos        => [350,202]                      ,
+                                  -pos        => [300,270]                      ,
                                   -text       => $STR{'dump'}                   ,
                                   -font       => $font10                        ,
                                   -disabled   => 1                              ,
@@ -854,12 +973,12 @@ $winChat->AddButton(              -name       => 'btnChatOk'                    
 # Config window
 #------------------------------------------------------------------------------#
 my $winConfigPosX   = ($scrnX - 650) / 2;
-my $winConfigPosY   = ($scrnY - 280) / 2;
+my $winConfigPosY   = ($scrnY - 300) / 2;
 my $winConfig = Win32::GUI::DialogBox->new( -name        => 'winConfig'                    ,
                                             -parent      => $win                           ,
                                             -text        => $STR{'winConfig'}              ,
                                             -pos         => [$winConfigPosX, $winConfigPosY] ,
-                                            -size        => [650,280]                      , # 532 to 650, 285 to 340
+                                            -size        => [650,300]                      , # 532 to 650, 285 to 340
                                             -background  => [255, 255, 255]                ,
                                             -hasmaximize => 0                              ,
                                             -hasminimize => 0                              ,
@@ -877,7 +996,7 @@ $winConfig->AddLabel(     -name         => 'lblLogo'             ,
 
 # Tabstrip
 $winConfig->AddTabStrip(            -name         => 'configTab'           ,
-                                    -size         => [500,240]             ,
+                                    -size         => [500,260]             ,
                                     -pos          => [140,  5]             ,
                                     -fixedwidth   => 1                     ,
                                     -tabstop      => 1                     ,
@@ -957,7 +1076,7 @@ $winConfig->AddUpDown(    -name        => 'upNbrResume'         ,
 $winConfig->upNbrResume->SetRange(1,99);
 $winConfig->AddCheckbox(  -name        => 'chDelTempFiles'      ,
                           -size        => [230, 20]             ,
-                          -pos         => [150,205]             ,
+                          -pos         => [150,200]             ,
                           -text        => $STR{'chDelTempFiles'},
                           -background  => [255, 255, 255]       ,
                           -font        => $font10               ,
@@ -965,55 +1084,120 @@ $winConfig->AddCheckbox(  -name        => 'chDelTempFiles'      ,
                           -checked     => 1                     , );
 $winConfig->AddCheckbox(  -name        => 'chDebugLogging'      ,
                           -size        => [200, 20]             ,
-                          -pos         => [400,205]             ,
+                          -pos         => [400,200]             ,
                           -text        => $STR{'chDebugLogging'},
                           -background  => [255, 255, 255]       ,
                           -font        => $font10               ,
                           -tabstop     => 1                     , );
+$winConfig->AddLabel(     -name        => 'lblCharset'          ,
+                          -size        => [ 70, 22]             ,
+                          -pos         => [150,233]             ,
+                          -text        => $STR{'lblCharset'}.':',
+                          -font        => $font10               ,
+                          -background  => [255, 255, 255]       , );
+$winConfig->AddCombobox(  -name        => 'cbCharset'           ,
+                          -size        => [110,100]             ,
+                          -pos         => [235,230]             ,
+                          -font        => $font10               ,
+                          -dropdown    => 1                     ,
+                          -vscroll     => 1                     ,
+                          -tabstop     => 1                     , );
+$winConfig->cbCharset->Add('cp1252'     , 'iso-8859-1' , 'iso-8859-2' , 'iso-8859-3' ,
+                           'iso-8859-4' , 'iso-8859-5' , 'iso-8859-6' , 'iso-8859-7' ,
+                           'iso-8859-8' , 'iso-8859-9' , 'iso-8859-10', 'iso-8859-11', 
+                           'iso-8859-13', 'iso-8859-14', 'iso-8859-15', 'iso-8859-16', );
 
 # Scroll options
-$winConfig->AddLabel(     -name        => 'lblMaxScrollChat'    ,
-                          -size        => [165, 22]             ,
-                          -pos         => [150, 48]             ,
-                          -text        => $STR{'lblMaxLoading'}.':',
-                          -font        => $font10               ,
-                          -background  => [255, 255, 255]       ,
-                          -visible     => 0                     , );
-$winConfig->AddTextfield( -name        => 'tfMaxScrollChat'     ,
-                          -size        => [ 40, 22]             ,
-                          -pos         => [320, 45]             ,
-                          -tip         => $STR{'tfMaxScrollTip'},
-                          -number      => 1                     ,
-                          -tabstop     => 1                     ,
-                          -visible     => 0                     , );
-$winConfig->AddUpDown(    -name        => 'upMaxScrollChat'     ,
-                          -tabstop     => 1                     , );
+$winConfig->AddLabel(       -name        => 'lblMaxScrollChat'    ,
+                            -size        => [165, 22]             ,
+                            -pos         => [150, 48]             ,
+                            -text        => $STR{'lblMaxLoading'}.':',
+                            -font        => $font10               ,
+                            -background  => [255, 255, 255]       ,
+                            -visible     => 0                     , );
+$winConfig->AddRadioButton( -name        => 'rbMaxScrollChatByPage',
+                            -size        => [100, 22]             ,
+                            -pos         => [320, 45]             ,
+                            -background  => [255, 255, 255]       ,
+                            -text        => $STR{'rbMaxScrollByPage'}.':' ,
+                            -font        => $font10               ,
+                            -checked     => 1                     ,
+                            -group       => 1                     ,
+                            -visible     => 0                     , );
+$winConfig->AddTextfield(   -name        => 'tfMaxScrollChat'     ,
+                            -size        => [ 40, 22]             ,
+                            -pos         => [425, 45]             ,
+                            -tip         => $STR{'tfMaxScrollByPageTip'},
+                            -number      => 1                     ,
+                            -tabstop     => 1                     ,
+                            -visible     => 0                     , );
+$winConfig->AddUpDown(      -name        => 'upMaxScrollChat'     ,
+                            -tabstop     => 1                     , );
 $winConfig->upMaxScrollChat->SetRange(0,99);
-$winConfig->AddLabel(     -name        => 'lblMaxScroll'        ,
-                          -size        => [165, 22]             ,
-                          -pos         => [150, 78]             ,
-                          -text        => $STR{'lblMaxScroll'}.':',
-                          -font        => $font10               ,
-                          -background  => [255, 255, 255]       ,
-                          -visible     => 0                     , );
-$winConfig->AddTextfield( -name        => 'tfMaxScroll'         ,
-                          -size        => [ 40, 22]             ,
-                          -pos         => [320, 75]             ,
-                          -tip         => $STR{'tfMaxScrollTip'},
-                          -number      => 1                     ,
-                          -tabstop     => 1                     ,
-                          -visible     => 0                     , );
-$winConfig->AddUpDown(    -name        => 'upMaxScroll'         ,
-                          -tabstop     => 1                     , );
+$winConfig->AddRadioButton( -name        => 'rbMaxScrollChatByDate',
+                            -size        => [100, 22]             ,
+                            -pos         => [320, 75]             ,
+                            -background  => [255, 255, 255]       ,
+                            -text        => $STR{'rbMaxScrollByDate'}.':' ,
+                            -font        => $font10               ,
+                            -visible     => 0                     , );
+$winConfig->AddDateTime(    -name        => 'dtMaxScrollChatByDate',
+                            -size        => [ 90, 22]             ,
+                            -pos         => [425, 75]             ,
+                            -font        => $font10               ,
+                            -background  => [255, 255, 255]       ,
+                            -format      => 'shortdate'           ,
+                            -tip         => $STR{'tfMaxScrollByDateTip'},
+                            -visible     => 0                     , );
+$winConfig->AddLabel(       -name        => 'lblMaxScroll'        ,
+                            -size        => [165, 22]             ,
+                            -pos         => [150,108]             ,
+                            -text        => $STR{'lblMaxScroll'}.':',
+                            -font        => $font10               ,
+                            -background  => [255, 255, 255]       ,
+                            -visible     => 0                     , );
+$winConfig->AddRadioButton( -name        => 'rbMaxScrollByPage'   ,
+                            -size        => [100, 22]             ,
+                            -pos         => [320,105]             ,
+                            -background  => [255, 255, 255]       ,
+                            -text        => $STR{'rbMaxScrollByPage'}.':' ,
+                            -font        => $font10               ,
+                            -checked     => 1                     ,
+                            -group       => 1                     ,
+                            -visible     => 0                     , );
+$winConfig->AddTextfield(   -name        => 'tfMaxScroll'         ,
+                            -size        => [ 40, 22]             ,
+                            -pos         => [425,105]             ,
+                            -tip         => $STR{'tfMaxScrollByPageTip'},
+                            -number      => 1                     ,
+                            -tabstop     => 1                     ,
+                            -visible     => 0                     , );
+$winConfig->AddUpDown(      -name        => 'upMaxScroll'         ,
+                            -tabstop     => 1                     , );
 $winConfig->upMaxScroll->SetRange(0,99);
-$winConfig->AddCheckbox(  -name        => 'chOptScrollTop'      ,
-                          -size        => [310, 20]             ,
-                          -pos         => [150,110]             ,
-                          -text        => $STR{'chOptScrollTop'},
-                          -background  => [255, 255, 255]       ,
-                          -font        => $font10               ,
-                          -tabstop     => 1                     ,
-                          -checked     => 1                     , );
+$winConfig->AddRadioButton( -name        => 'rbMaxScrollByDate'   ,
+                            -size        => [100, 22]             ,
+                            -pos         => [320,135]             ,
+                            -background  => [255, 255, 255]       ,
+                            -text        => $STR{'rbMaxScrollByDate'}.':' ,
+                            -font        => $font10               ,
+                            -visible     => 0                     , );
+$winConfig->AddDateTime(    -name        => 'dtMaxScrollByDate'   ,
+                            -size        => [ 90, 22]             ,
+                            -pos         => [425,135]             ,
+                            -font        => $font10               ,
+                            -background  => [255, 255, 255]       ,
+                            -format      => 'shortdate'           ,
+                            -tip         => $STR{'tfMaxScrollByDateTip'},
+                            -visible     => 0                     , );
+$winConfig->AddCheckbox(    -name        => 'chOptScrollTop'      ,
+                            -size        => [310, 20]             ,
+                            -pos         => [150,170]             ,
+                            -text        => $STR{'chOptScrollTop'},
+                            -background  => [255, 255, 255]       ,
+                            -font        => $font10               ,
+                            -tabstop     => 1                     ,
+                            -checked     => 1                     , );
 
 # Expand options
 $winConfig->AddCheckbox(  -name        => 'chOptSeemore'        ,
@@ -1215,7 +1399,23 @@ usleep(500000);
 $splash->Hide;
 
 $START = 1;
+if (!$CONFIG{'START_MINIMIZED'}) { $win->Show(); }
 Win32::GUI::Dialog();
+
+#--------------------------#
+sub chStartMinimized_Click
+#--------------------------#
+{
+  # Save the choice
+  if ($win->chStartMinimized->Checked()) {
+    $CONFIG{'START_MINIMIZED'} = 1;
+    &saveConfig(\%CONFIG);
+  } else {
+    $CONFIG{'START_MINIMIZED'} = 0;
+    &saveConfig(\%CONFIG);
+  }
+
+}  #--- End chStartMinimized_Click
 
 #--------------------------#
 sub main_Terminate
@@ -1356,27 +1556,27 @@ sub scrollThr
     threads->exit();
   }
   
-  $winPb2->lblPbCurr->Text($STR{'scrollTaskP'}.'...');
-  &scrollToBottom(\$mech, $CONFIG{'TIME_TO_WAIT'}, $count);
-  
-  # Scroll to the top
-  if ($winConfig->chOptScrollTop->Checked()) {
-    $mech->eval_in_page('window.scrollTo(0,0)');
-  }
+  if ($mech->uri() =~ /facebook.com/) {
+    $winPb2->lblPbCurr->Text($STR{'scrollTaskP'}.'...');
+    &scrollToBottom(\$mech, $CONFIG{'TIME_TO_WAIT'}, $count);
+    
+    # Scroll to the top
+    if ($winConfig->chOptScrollTop->Checked()) { $mech->eval_in_page('window.scrollTo(0,0)'); }
+    
+    $win->Tray->Change(-tip => $STR{'scrollTaskF'});
+    if (!$win->IsVisible()) {
+      $win->Tray->Change( -balloon_icon  => 'info'              ,
+                          -balloon_title => 'ExtractFace'       ,
+                          -balloon_tip   => $STR{'scrollTaskF'} , );
+      $win->Tray->ShowBalloon(1);
+    }
+    $win->ChangeCursor($ARROW);
+  } else { Win32::GUI::MessageBox($winPb2, $STR{'warn4'}, $STR{'err1T'}, 0x40010); }
   
   # Turn off progress bar
   $winPb2->lblPbCurr->Text('');
   $winPb2->lblCount->Text('');
   &winPb2_Terminate;
-    
-  $win->Tray->Change(-tip => $STR{'scrollTaskF'});
-  if (!$win->IsVisible()) {
-    $win->Tray->Change( -balloon_icon  => 'info'              ,
-                        -balloon_title => 'ExtractFace'       ,
-                        -balloon_tip   => $STR{'scrollTaskF'} , );
-    $win->Tray->ShowBalloon(1);
-  }
-  $win->ChangeCursor($ARROW);
 
 }  #--- End scrollThr
 
@@ -1472,23 +1672,25 @@ sub expandThr
     threads->exit();
   }
   
-  $winPb2->lblPbCurr->Text($STR{'expandTaskP'}.'...');
-  &expandContent(\$mech);
-  &expandContent(\$mech); # Do it again
+  if ($mech->uri() =~ /facebook.com/) {
+    $winPb2->lblPbCurr->Text($STR{'expandTaskP'}.'...');
+    &expandContent(\$mech);
+    &expandContent(\$mech); # Do it again
+    
+    $win->Tray->Change(-tip => $STR{'expandTaskF'});
+    if (!$win->IsVisible()) {
+      $win->Tray->Change( -balloon_icon  => 'info'              ,
+                          -balloon_title => 'ExtractFace'       ,
+                          -balloon_tip   => $STR{'expandTaskF'} , );
+      $win->Tray->ShowBalloon(1);
+    }
+    $win->ChangeCursor($ARROW);
+  } else { Win32::GUI::MessageBox($winPb2, $STR{'warn4'}, $STR{'err1T'}, 0x40010); }
   
   # Turn off progress bar
   $winPb2->lblPbCurr->Text('');
   $winPb2->lblCount->Text('');
   &winPb2_Terminate;
-    
-  $win->Tray->Change(-tip => $STR{'expandTaskF'});
-  if (!$win->IsVisible()) {
-    $win->Tray->Change( -balloon_icon  => 'info'              ,
-                        -balloon_title => 'ExtractFace'       ,
-                        -balloon_tip   => $STR{'expandTaskF'} , );
-    $win->Tray->ShowBalloon(1);
-  }
-  $win->ChangeCursor($ARROW);
 
 }  #--- End expandThr
 
@@ -1582,54 +1784,69 @@ sub scrollExpandThr
     threads->exit();
   }
 
-  # Show starting of the process
-  $win->Tray->Change(-tip => $STR{'scrollTaskP'});
-  if (!$win->IsVisible()) {
-    $win->Tray->Change( -balloon_icon  => 'info'              ,
-                        -balloon_title => 'ExtractFace'       ,
-                        -balloon_tip   => $STR{'scrollTaskP'} , );
-    $win->Tray->ShowBalloon(1);
-  }
-  
-  # Scroll one page at a time and expand until end of page is reached
-  $winPb2->lblPbCurr->Text($STR{'scrollTaskP'}.'...');
-  my $maxScroll = $winConfig->tfMaxScroll->Text();
-  my $end = &scrollPage(\$mech, $CONFIG{'TIME_TO_WAIT'});
-  $count++;
-  while (!$end) { # If $end == 1, we reached the end of the page
-    # Expand
-    if ($winConfig->chOptSeemore->Checked()  or $winConfig->chOptPosts->Checked()    or
-        $winConfig->chOptComments->Checked() or $winConfig->chOptTranslate->Checked()) {
-      # Expand all additional content
-      $winPb2->lblPbCurr->Text($STR{'expandTaskP'}.'...');
-      $win->Tray->Change(-tip => $STR{'expandTaskP'}.'...');
-      &expandContent(\$mech);
-      &expandContent(\$mech); # Do it again
+  if ($mech->uri() =~ /facebook.com/) {
+    # Show starting of the process
+    $win->Tray->Change(-tip => $STR{'scrollTaskP'});
+    if (!$win->IsVisible()) {
+      $win->Tray->Change( -balloon_icon  => 'info'              ,
+                          -balloon_title => 'ExtractFace'       ,
+                          -balloon_tip   => $STR{'scrollTaskP'} , );
+      $win->Tray->ShowBalloon(1);
     }
     
-    # Scroll again
-    if ($maxScroll and $count >= $maxScroll) { last; } # Maximum scrolling reached
+    # Scroll one page at a time and expand until end of page is reached
     $winPb2->lblPbCurr->Text($STR{'scrollTaskP'}.'...');
-    $end = &scrollPage(\$mech, $CONFIG{'TIME_TO_WAIT'});
+    my $maxScrollByDate = $winConfig->rbMaxScrollByDate->Checked();
+    my $maxDate;
+    my $maxScroll;
+    if ($maxScrollByDate) {
+      my ($d, $m, $y) = $winConfig->dtMaxScrollByDate->GetDate();
+      $maxDate        = timelocal(0,0,0,$d,$m-1,$y); # Store in Unixtime format
+    } else { $maxScroll = $winConfig->tfMaxScroll->Text(); }
+   
+    my $end = &scrollPage(\$mech, $CONFIG{'TIME_TO_WAIT'});
     $count++;
-  }
+    while (!$end) { # If $end == 1, we reached the end of the page
+      # Expand
+      if ($winConfig->chOptSeemore->Checked()  or $winConfig->chOptPosts->Checked()    or
+          $winConfig->chOptComments->Checked() or $winConfig->chOptTranslate->Checked()) {
+        # Expand all additional content
+        $winPb2->lblPbCurr->Text($STR{'expandTaskP'}.'...');
+        $win->Tray->Change(-tip => $STR{'expandTaskP'}.'...');
+        &expandContent(\$mech);
+        &expandContent(\$mech); # Do it again
+      }
+      
+      # Scroll again
+      $winPb2->lblPbCurr->Text($STR{'scrollTaskP'}.'...');
+      if ($maxScrollByDate and $maxDate) { # Stop by date
+        my $lastDisplayedDate = ($mech->selector('a._5pcq abbr'))[-1];
+        if ($lastDisplayedDate->{outerHTML} =~ /data-utime="([^\"]+)"/) {
+          my $date = $1;
+          if ($date <= $maxDate) { last; }
+        }
+      } elsif ($maxScroll and $count >= $maxScroll) { last; } # Stop by page
+      $end = &scrollPage(\$mech, $CONFIG{'TIME_TO_WAIT'});
+      $count++;
+    }
+    
+    # Scroll to the top
+    if ($winConfig->chOptScrollTop->Checked()) { $mech->eval_in_page('window.scrollTo(0,0)'); }
+    
+    $win->Tray->Change(-tip => $STR{'expandTaskF'});
+    if (!$win->IsVisible()) {
+      $win->Tray->Change( -balloon_icon  => 'info'              ,
+                          -balloon_title => 'ExtractFace'       ,
+                          -balloon_tip   => $STR{'scrExpTaskF'} , );
+      $win->Tray->ShowBalloon(1);
+    }
+  } else { Win32::GUI::MessageBox($winPb2, $STR{'warn4'}, $STR{'err1T'}, 0x40010); }
   
   # Turn off progress bar
   $winPb2->lblPbCurr->Text('');
   $winPb2->lblCount->Text('');
   &winPb2_Terminate;
   $win->ChangeCursor($ARROW);
-  
-  $win->Tray->Change(-tip => $STR{'expandTaskF'});
-  if (!$win->IsVisible()) {
-    $win->Tray->Change( -balloon_icon  => 'info'              ,
-                        -balloon_title => 'ExtractFace'       ,
-                        -balloon_tip   => $STR{'scrExpTaskF'} , );
-    $win->Tray->ShowBalloon(1);
-  }
-  
-  # Scroll to the top
-  if ($winConfig->chOptScrollTop->Checked()) { $mech->eval_in_page('window.scrollTo(0,0)'); }
 
 }  #--- End scrollExpandThr
 
@@ -1637,33 +1854,56 @@ sub scrollExpandThr
 sub winAlbums
 #--------------------------#
 {
+  # Avoid new thread
+  if ($THR and $THR->is_running()) {
+    Win32::GUI::MessageBox($win, $STR{'warn1'},$STR{'warn1T'},0x40010);
+  } else {
+    # Start the thread
+    $THR = threads->create(\&winAlbumsThr);
+    
+    usleep(500000);
+    $winAlbums->GridAlbums->AutoSize();
+    $winAlbums->Center();
+    $winAlbums->DoModal();
+  }
+
+}  #--- End winAlbums
+
+#--------------------------#
+sub winAlbumsThr
+#--------------------------#
+{
   # Local variables
-  my $tempDir = "$PROGDIR\\temp";
+  my $tempDir = "$USERDIR\\temp";
   
-  # Gather album names
-  $THR = threads->create(sub {
-    # Deal with crash
-    $SIG{__DIE__} = sub {
-      my $msgErr = $_[0];
-      chomp($msgErr);
-      $msgErr =~ s/[\t\r\n]/ /g;
+  # Deal with crash
+  $SIG{__DIE__} = sub {
+    my $msgErr = $_[0];
+    chomp($msgErr);
+    $msgErr =~ s/[\t\r\n]/ /g;
+    if ($msgErr =~ /NS_ERROR_FILE_IS_LOCKED/) {
+      # Restart a new thread to continue
+      $THR = threads->create(\&winAlbumsThr);
+    } else {
       if ($winConfig->chDebugLogging->Checked()) { &debug($msgErr); }
       $win->ChangeCursor($ARROW);
       $win->Tray->Change(-tip => 'ExtractFace');
       Win32::GUI::MessageBox($winAlbums, $STR{'err3'}, $STR{'err1T'}, 0x40010);
-      threads->exit();
-    };
-    
-    my $mech;
-    eval { $mech = WWW::Mechanize::Firefox->new(tab => 'current'); };
-    if ($@) {
-      if ($@ =~ /Failed to connect to/) {
-        $winAlbums->btnAlbumsOk->Disable();
-        Win32::GUI::MessageBox($winAlbums, $STR{'err1'}, $STR{'err1T'}, 0x40010);
-      }
-      threads->exit();
     }
-    
+  };
+  
+  my $mech;
+  eval { $mech = WWW::Mechanize::Firefox->new(tab => 'current'); };
+  if ($@) {
+    if ($@ =~ /Failed to connect to/) {
+      $winAlbums->btnAlbumsOk->Disable();
+      Win32::GUI::MessageBox($winAlbums, $STR{'err1'}, $STR{'err1T'}, 0x40010);
+    }
+    threads->exit();
+  }
+  
+  # Gather album names
+  if ($mech->uri() =~ /facebook.com/) {
     # Valid current page
     $winAlbums->ChangeCursor($HOURGLASS);
     &validAlbumPage(\$mech);
@@ -1675,7 +1915,7 @@ sub winAlbums
     foreach my $album (@albums) {
       my $albumName = $album->{innerHTML};
       $albumName   =~ s/<[^\>]+>//g;
-      $albumName   = encode("iso-8859-1", $albumName);
+      $albumName   = encode($CONFIG{'CHARSET'}, $albumName);
       my $albumUrl = $album->{href};
       $albums{$albumName} = $albumUrl;
     }
@@ -1695,16 +1935,12 @@ sub winAlbums
     
     $winAlbums->lblInProgress->Text('');
     $winAlbums->ChangeCursor($ARROW);
-    
-    # Ready ?
-    &isDumpAlbumsReady();
-  });
-    
-  $winAlbums->GridAlbums->AutoSize();
-  $winAlbums->Center();
-  $winAlbums->DoModal();
+  } else { Win32::GUI::MessageBox($winAlbums, $STR{'warn4'}, $STR{'err1T'}, 0x40010); }
+  
+  # Ready ?
+  &isDumpAlbumsReady();
 
-}  #--- End winAlbums
+}  #--- End winAlbumsThr
 
 #--------------------------#
 sub validAlbumPage
@@ -1738,14 +1974,15 @@ sub validAlbumPage
     }
   # You are in the right page, scroll down to load the whole page
   } else {
-    $currTitle = $$refMech->title();
+    if ($currURL and $currURL =~ /https:\/\/www.facebook.com\//) {
+      if    ($currURL =~ /https:\/\/www.facebook.com\/profile.php\?id=([^\/\&]+)/) { $currTitle = $1; }
+      elsif ($currURL =~ /https:\/\/www.facebook.com\/([^\/\?]+)/                ) { $currTitle = $1; }
+    }
     $winAlbums->lblInProgress->Text($STR{'loadAlbum'}.'...');
   }
   
   # Write title (used for HTML Album)
   if ($currTitle) {
-    $currTitle = encode("iso-8859-1", $currTitle);
-    if ($currTitle =~ /\(1\) (.+)/) { $currTitle = $1; }
     $currTitle .= " - Albums";
     $winAlbums->tfAlbumTitle->Text($currTitle);
   }
@@ -2020,9 +2257,10 @@ sub dumpAlbums
     for (my $i = 1; $i < $winAlbums->GridAlbums->GetRows(); $i++) {
       my $selStatus = $winAlbums->GridAlbums->GetCellCheck($i, 0);
       if ($selStatus == 1) {
-        my $albumName = $winAlbums->GridAlbums->GetCellText($i, 1);
+        my $albumName = decode($CONFIG{'CHARSET'}, $winAlbums->GridAlbums->GetCellText($i, 1));
         my $albumURL  = $winAlbums->GridAlbums->GetCellText($i, 2);
-        $$refListAlbums{$albumName}{url} = $albumURL;
+        $$refListAlbums{$albumName}{'url'}  = $albumURL;
+        $$refListAlbums{$albumName}{'name'} = $albumName;
       }
     }
     # Number of album
@@ -2050,32 +2288,36 @@ sub dumpAlbums
     
     # Parse each album
     foreach my $album (sort keys %{$refListAlbums}) {
+      my $encodedName = encode($CONFIG{'CHARSET'}, $$refListAlbums{$album}{name});
       my %listPics;
       my @listVideos;
       
-      $winPb->lblPbCurr1->Text("$STR{'opening'}: $album");
+      $winPb->lblPbCurr1->Text("$STR{'opening'}: $encodedName");
       $winPb->lblCount1->Text("$count1/$nbrAlbums");
       $winPb->lblPbCurr2->Text('');
       $winPb->lblCount2->Text('');
-      my $album2 = $album;
-      $album =~ s/[\<\>\:\"\/\\\|\?\*]/_/g;
+      
+      my $albumDir;
+      if ($$refListAlbums{$album}{'url'} =~ /\?set=([^\&]+)&/) { $albumDir = $1; }
+      if (!$albumDir) { $albumDir = $count1; }
+      $$refListPics{$album}{'dir'} = $albumDir;
       
       # Gather album page
       my $mechAlbum = WWW::Mechanize::Firefox->new(tab => 'current', autodie => 0);
       if (!exists($$refListAlbums{$album}{'nbrPics'}) and !exists($$refListAlbums{$album}{'nbrVideos'})) {
-        if (!-d "$saveDir\\$mainAlbumTitle"              ) { mkdir("$saveDir\\$mainAlbumTitle");               }
-        if (!-d "$saveDir\\$mainAlbumTitle\\$album"      ) { mkdir("$saveDir\\$mainAlbumTitle\\$album");       }
-        if (!-d "$saveDir\\$mainAlbumTitle\\$album\\temp") { mkdir("$saveDir\\$mainAlbumTitle\\$album\\temp"); }
-        $mechAlbum->get($$refListAlbums{$album2}{'url'}, synchronize => 0);
-        $winPb->lblPbCurr1->Text("$STR{'scrolling'}: $album");
+        if (!-d "$saveDir\\$mainAlbumTitle"                 ) { mkdir("$saveDir\\$mainAlbumTitle");                  }
+        if (!-d "$saveDir\\$mainAlbumTitle\\$albumDir"      ) { mkdir("$saveDir\\$mainAlbumTitle\\$albumDir");       }
+        if (!-d "$saveDir\\$mainAlbumTitle\\$albumDir\\temp") { mkdir("$saveDir\\$mainAlbumTitle\\$albumDir\\temp"); }
+        $mechAlbum->get($$refListAlbums{$album}{'url'}, synchronize => 0);
+        $winPb->lblPbCurr1->Text("$STR{'scrolling'}: $encodedName");
         sleep($CONFIG{'TIME_TO_WAIT'});
         &scrollAlbumPage(\$mechAlbum, $CONFIG{'TIME_TO_WAIT'});
       }
       
-      $winPb->lblPbCurr1->Text("$STR{'parsing'}: $album");
+      $winPb->lblPbCurr1->Text("$STR{'parsing'}: $encodedName");
       
       # Video album
-      if ($album eq 'Videos') {
+      if ($$refListAlbums{$album}{'url'} =~ /set=vb/) {
         my %listVideos;
         my %videoNames;
         
@@ -2099,20 +2341,20 @@ sub dumpAlbums
           }
         }
         @videos = ();
-        $$refListAlbums{$album2}{'nbrVideos'} = keys %listVideos;
+        $$refListAlbums{$album}{'nbrVideos'} = keys %listVideos;
         
         # Gather preview picture
-        if ($$refListAlbums{$album2}{'nbrVideos'} > 0) {
+        if ($$refListAlbums{$album}{'nbrVideos'} > 0) {
           my $count2 = 0;
-          $winPb->pbWinPb2->SetRange(0, $$refListAlbums{$album2}{'nbrVideos'});
+          $winPb->pbWinPb2->SetRange(0, $$refListAlbums{$album}{'nbrVideos'});
           $winPb->pbWinPb2->SetPos(0);
           $winPb->pbWinPb2->SetStep(1);
-          $winPb->lblCount2->Text("$count2/$$refListAlbums{$album2}{'nbrVideos'}");
+          $winPb->lblCount2->Text("$count2/$$refListAlbums{$album}{'nbrVideos'}");
           foreach my $videoPage (keys %listVideos) {
             my $pic;
             if ($listVideos{$videoPage} =~ /\/([^\/\?]+)(?:\?|$)/) {
               my $pic = $1;
-              my $picPath = "$saveDir\\$mainAlbumTitle\\$album\\$pic";
+              my $picPath = "$saveDir\\$mainAlbumTitle\\$albumDir\\$pic";
               $winPb->lblPbCurr2->Text("$STR{'downloading'}: $pic");
               # Download the picture if does not exist
               $$refListPics{$album}{$picPath} = $count2;
@@ -2122,14 +2364,14 @@ sub dumpAlbums
               }
               $count2++;
               $winPb->pbWinPb2->StepIt();
-              $winPb->lblCount2->Text("$count2/$$refListAlbums{$album2}{'nbrVideos'}");
+              $winPb->lblCount2->Text("$count2/$$refListAlbums{$album}{'nbrVideos'}");
             }
           }
         
           # Gather videos
           $count2 = 0;
           $winPb->pbWinPb2->SetPos(0);
-          $winPb->lblCount2->Text("$count2/$$refListAlbums{$album2}{'nbrVideos'}");
+          $winPb->lblCount2->Text("$count2/$$refListAlbums{$album}{'nbrVideos'}");
           foreach my $videoPage (keys %listVideos) {
             if ($videoPage =~ /vb\.[^\/]+\/([^\/]+)/) {
               # Gather page with the video
@@ -2138,7 +2380,7 @@ sub dumpAlbums
               $mechAlbum->get($videoPage, synchronize => 0);
               sleep($CONFIG{'TIME_TO_WAIT'}+1);
               # Download the video
-              if (my $videoURL = $mechAlbum->selector('video', one => 1)->{src}) {
+              if (my $videoURL = ($mechAlbum->selector('video'))[-1]->{src}) {
                 my $videoPath;
                 $videoURL =~ s/&amp;/&/g;
                 $winPb->lblPbCurr2->Text("$STR{'downloading'}: $videoURL");
@@ -2149,7 +2391,7 @@ sub dumpAlbums
                     $$refListPicsDate{$$refListVideoFiles{$videoPage}} = $1;
                   }
                 }
-                $videoPath = "$saveDir\\$mainAlbumTitle\\$album\\$videoName\.mp4";
+                $videoPath = "$saveDir\\$mainAlbumTitle\\$albumDir\\$videoName\.mp4";
                 $mechAlbum->save_url($videoURL, $videoPath); # Download video
                 my $picPath = $$refListVideoFiles{$videoPage};
                 $$refListVideoFiles{$picPath} = $videoPath;
@@ -2159,7 +2401,7 @@ sub dumpAlbums
             # Update progress
             $count2++;
             $winPb->pbWinPb2->StepIt();
-            $winPb->lblCount2->Text("$count2/$$refListAlbums{$album2}{'nbrVideos'}");
+            $winPb->lblCount2->Text("$count2/$$refListAlbums{$album}{'nbrVideos'}");
           }
         }        
       # Picture album
@@ -2182,18 +2424,18 @@ sub dumpAlbums
         @pictures = ();
         
         # Gather pictures
-        $$refListAlbums{$album2}{'nbrPics'} = (keys %listPics);
-        if ($$refListAlbums{$album2}{'nbrPics'} > 0) {
-          $winPb->pbWinPb2->SetRange(0, $$refListAlbums{$album2}{'nbrPics'});
+        $$refListAlbums{$album}{'nbrPics'} = (keys %listPics);
+        if ($$refListAlbums{$album}{'nbrPics'} > 0) {
+          $winPb->pbWinPb2->SetRange(0, $$refListAlbums{$album}{'nbrPics'});
           $winPb->pbWinPb2->SetPos(0);
           $winPb->pbWinPb2->SetStep(1);
           my $count2 = 0;
-          $winPb->lblCount2->Text("$count2/$$refListAlbums{$album2}{'nbrPics'}");
+          $winPb->lblCount2->Text("$count2/$$refListAlbums{$album}{'nbrPics'}");
           foreach my $picURL (sort {$listPics{$a}{'ind'} <=> $listPics{$b}{'ind'}} keys %listPics) {
             if ($picURL =~ /\/([^\/\?]+)(?:\?|$)/) {
               my $pic = $1;
-              $pic = encode("iso-8859-1", $pic);
-              my $picPath = "$saveDir\\$mainAlbumTitle\\$album\\$pic";
+              $pic = encode($CONFIG{'CHARSET'}, $pic);
+              my $picPath = "$saveDir\\$mainAlbumTitle\\$albumDir\\$pic";
               $winPb->lblPbCurr2->Text("$STR{'downloading'}: $pic");
               my $picOk = 0;
               # If picture exists, verify integrity
@@ -2246,7 +2488,7 @@ sub dumpAlbums
             # Update progress
             $count2++;
             $winPb->pbWinPb2->StepIt();
-            $winPb->lblCount2->Text("$count2/$$refListAlbums{$album2}{'nbrPics'}");
+            $winPb->lblCount2->Text("$count2/$$refListAlbums{$album}{'nbrPics'}");
           }
         }
       }
@@ -2259,18 +2501,18 @@ sub dumpAlbums
       $winPb->lblCount2->Text('');
       
       # Delete completed album
-      delete($$refListAlbums{$album2});
+      delete($$refListAlbums{$album});
       
       # Delete temporary files
-      if (-d "$saveDir\\$mainAlbumTitle\\$album\\temp" and $winConfig->chDelTempFiles->Checked()) {
-        remove_tree("$saveDir\\$mainAlbumTitle\\$album\\temp");
+      if (-d "$saveDir\\$mainAlbumTitle\\$albumDir\\temp" and $winConfig->chDelTempFiles->Checked()) {
+        remove_tree("$saveDir\\$mainAlbumTitle\\$albumDir\\temp");
       }
     }
     
     # Create the HTML Album page
     my $htmlAlbumPage = "$saveDir\\$mainAlbumTitle.html";
     $mainAlbumTitle = encode('utf8', $mainAlbumTitle);
-    open(HTML, ">$htmlAlbumPage");
+    open(HTML, ">:encoding(UTF-8)", $htmlAlbumPage);
     print HTML "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\">\n";
     print HTML "<html>\n<head>\n<title>$mainAlbumTitle</title>\n";
     print HTML "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf8\">\n";
@@ -2281,17 +2523,18 @@ sub dumpAlbums
     print HTML "<table border=1 cellspacing=0 cellpadding=1 align=\"center\" width=\"800\">\n";
     # For each album
     foreach my $album (keys %{$refListPics}) {
-      my $encAlbumName = encode('utf8', $album);
-      print HTML "<tr><th colspan=4 height=\"60px\" style=\"color:#003300; background-color:#EEEEEE; font-size: 14pt; font-variant: small-caps; font-weight: bold;\">$encAlbumName</th></tr>";
+      print HTML "<tr><th colspan=4 height=\"60px\" style=\"color:#003300; background-color:#EEEEEE; font-size: 14pt; font-variant: small-caps; font-weight: bold;\">$album</th></tr>";
       my $count = 0;
+      my $albumDir = $$refListPics{$album}{'dir'};
+      delete($$refListPics{$album}{'dir'});
       foreach my $pic (sort {$$refListPics{$album}{$a} <=> $$refListPics{$album}{$b}} keys %{$$refListPics{$album}}) {
         my $fileName = (split(/\\/, $pic))[-1];
-        my $filePath = ".\\$mainAlbumTitle\\$encAlbumName\\$fileName";
+        my $filePath = ".\\$mainAlbumTitle\\$albumDir\\$fileName";
         if (!$count) { print HTML "<tr>\n"; }  # new row for each group of 4 pics
         print HTML "<td width=\"25%\" align=\"center\" style=\"font-size: 11pt;\">\n";
-        if ($album eq 'Videos' and exists($$refListVideoFiles{$pic})) { # Video
+        if ($albumDir =~ /^vb\./ and exists($$refListVideoFiles{$pic})) { # Video
           my $videoFileName = (split(/\\/, $$refListVideoFiles{$pic}))[-1];
-          my $videoPath = ".\\$mainAlbumTitle\\$album\\$videoFileName";
+          my $videoPath = ".\\$mainAlbumTitle\\$albumDir\\$videoFileName";
           print HTML "<a href=\"$videoPath\">\n";
         } else { print HTML "<a href=\"$filePath\">\n"; }               # Picture
         print HTML "<img src=\"$filePath\" alt=\"$fileName\" width=\"200\" border=0>\n";
@@ -2388,32 +2631,55 @@ sub winAlbums_Terminate
 sub winFriends
 #--------------------------#
 {
+  # Avoid new thread
+  if ($THR and $THR->is_running()) {
+    Win32::GUI::MessageBox($win, $STR{'warn1'},$STR{'warn1T'},0x40010);
+  } else {
+    # Start the thread
+    $THR = threads->create(\&winFriendsThr);
+    
+    usleep(500000);
+    $winFriends->GridFriends->AutoSize();
+    $winFriends->Center();
+    $winFriends->DoModal();
+  }
+
+}  #--- End winFriends
+
+#--------------------------#
+sub winFriendsThr
+#--------------------------#
+{
   # Local variables
   my $saveDir = $winFriends->tfDirSaveFriends->Text();
   
-  $THR = threads->create(sub {
-    # Deal with crash
-    $SIG{__DIE__} = sub {
-      my $msgErr = $_[0];
-      chomp($msgErr);
-      $msgErr =~ s/[\t\r\n]/ /g;
+  # Deal with crash
+  $SIG{__DIE__} = sub {
+    my $msgErr = $_[0];
+    chomp($msgErr);
+    $msgErr =~ s/[\t\r\n]/ /g;
+    if ($msgErr =~ /NS_ERROR_FILE_IS_LOCKED/) {
+      # Restart a new thread to continue
+      $THR = threads->create(\&winFriendsThr);
+    } else {
       if ($winConfig->chDebugLogging->Checked()) { &debug($msgErr); }
       $win->ChangeCursor($ARROW);
       $win->Tray->Change(-tip => 'ExtractFace');
       Win32::GUI::MessageBox($winFriends, $STR{'err3'}, $STR{'err1T'}, 0x40010);
-      threads->exit();
-    };
-    
-    my $mech;
-    eval { $mech = WWW::Mechanize::Firefox->new(tab => 'current'); };
-    if ($@) {
-      if ($@ =~ /Failed to connect to/) {
-        $winFriends->btnFriendsOk->Disable();
-        Win32::GUI::MessageBox($winFriends, $STR{'err1'}, $STR{'err1T'}, 0x40010);
-      }
-      threads->exit();
     }
-
+  };
+  
+  my $mech;
+  eval { $mech = WWW::Mechanize::Firefox->new(tab => 'current'); };
+  if ($@) {
+    if ($@ =~ /Failed to connect to/) {
+      $winFriends->btnFriendsOk->Disable();
+      Win32::GUI::MessageBox($winFriends, $STR{'err1'}, $STR{'err1T'}, 0x40010);
+    }
+    threads->exit();
+  }
+  
+  if ($mech->uri() =~ /facebook.com/) {
     # Valid current page
     $winFriends->GridFriends->DeleteNonFixedRows();
     $winFriends->tfFriendName->Text('');
@@ -2421,7 +2687,7 @@ sub winFriends
     $winFriends->lblInProgress->Text($STR{'wait'}.'...');
     $winFriends->ChangeCursor($HOURGLASS);
     my $currURL   = $mech->uri();
-    my $currTitle = $mech->title();
+    my $currTitle;
     if ($currURL !~ /\/friends\/?$/ and $currURL !~ /\&sk=friends/) {
       # Trying to get the good page
       if ($currURL =~ /https:\/\/www.facebook.com\/profile.php\?id=([^\/\&]+)/) {
@@ -2441,14 +2707,16 @@ sub winFriends
         $winFriends->lblInProgress->Text('');
         threads->exit();
       } else {
+        if    ($currURL =~ /https:\/\/www.facebook.com\/profile.php\?id=([^\/\&]+)/) { $currTitle = $1; }
+        elsif ($currURL =~ /https:\/\/www.facebook.com\/([^\/\?]+)/                ) { $currTitle = $1; }
         $currTitle =~ s/[\<\>\:\"\/\\\|\?\*]/-/g;
-        $currTitle = encode("iso-8859-1", $currTitle);
         $winFriends->tfFriendName->Text("$currTitle - $STR{'friends'}");
       }
     # You are in the right page
     } else {
+      if    ($currURL =~ /https:\/\/www.facebook.com\/profile.php\?id=([^\/\&]+)/) { $currTitle = $1; }
+      elsif ($currURL =~ /https:\/\/www.facebook.com\/([^\/\?]+)/                ) { $currTitle = $1; }
       $currTitle =~ s/[\<\>\:\"\/\\\|\?\*]/-/g;
-      $currTitle = encode("iso-8859-1", $currTitle);
       $winFriends->tfFriendName->Text("$currTitle - $STR{'friends'}");
     }
     
@@ -2461,12 +2729,14 @@ sub winFriends
         if (/href=\"([^\"]+)\"/) {
           my $url  = $1;
           $url =~ s/&amp;/&/g;
-          if (/name=\"([^\"]+)\"/) {
-            my $name = $1;
-            $categories{$name}{url} = $url;
+          my $cat;
+          if (/name=\"([^\"]+)\"/) { $cat = $1; }
+          if ($cat) {
+            $categories{$cat}{name} = $cat;
+            $categories{$cat}{url}  = $url;
             if (/aria-controls=\"([^\"]+)\"/) {
               my $catId = $1;
-              $categories{$name}{catId} = $catId;
+              $categories{$cat}{catId} = $catId;
             }
           }
         }
@@ -2477,7 +2747,8 @@ sub winFriends
           $winFriends->GridFriends->SetCellText($i, 0, ''        );
           $winFriends->GridFriends->SetCellType($i, 0, GVIT_CHECK);
           $winFriends->GridFriends->SetCellCheck($i, 0, 1);
-          $winFriends->GridFriends->SetCellText($i, 1, $cat);
+          $categories{$cat}{name} = encode($CONFIG{'CHARSET'}, $categories{$cat}{name});
+          $winFriends->GridFriends->SetCellText($i, 1, $categories{$cat}{name});
           $winFriends->GridFriends->SetCellText($i, 2, $categories{$cat}{catId});
           $winFriends->GridFriends->SetCellText($i, 3, $categories{$cat}{url});
           $winFriends->GridFriends->AutoSize();
@@ -2486,20 +2757,15 @@ sub winFriends
         }
       }
     }
-  
-    $winFriends->ChangeCursor($ARROW);
-    $winFriends->lblInProgress->Text('');
-    
-    # Ready ?
-    &isDumpFriendsReady();
-  });
-  
-  usleep(500000);
-  $winFriends->GridFriends->AutoSize();
-  $winFriends->Center();
-  $winFriends->DoModal();
+  } else { Win32::GUI::MessageBox($winFriends, $STR{'warn4'}, $STR{'err1T'}, 0x40010); }
 
-}  #--- End winFriends
+  $winFriends->ChangeCursor($ARROW);
+  $winFriends->lblInProgress->Text('');
+  
+  # Ready ?
+  &isDumpFriendsReady();
+
+}  #--- End winFriendsThr
 
 #--------------------------#
 sub tfFriendName_Change
@@ -2756,7 +3022,7 @@ sub dumpFriends
       $THR = threads->create(\&dumpFriends, $friendName, $saveDir, $refListCatFriends, $nbrCatFriends,
                              $nbrGroupsDone, $posPb1, $parsingDone, $nbrRetries);
     } else {
-      Win32::GUI::MessageBox($winPb2, $STR{'err2'}, $STR{'err1T'}, 0x40010);
+      Win32::GUI::MessageBox($winPb, $STR{'err2'}, $STR{'err1T'}, 0x40010);
     }
     # Kill this thread
     threads->exit();
@@ -2770,11 +3036,12 @@ sub dumpFriends
     for (my $i = 1; $i < $winFriends->GridFriends->GetRows(); $i++) {
       my $selStatus = $winFriends->GridFriends->GetCellCheck($i, 0);
       if ($selStatus == 1) {
-        my $catName = $winFriends->GridFriends->GetCellText($i, 1);
+        my $catName = decode($CONFIG{'CHARSET'}, $winFriends->GridFriends->GetCellText($i, 1));
         my $catid   = $winFriends->GridFriends->GetCellText($i, 2);
         my $catURL  = $winFriends->GridFriends->GetCellText($i, 3);
-        $$refListCatFriends{$catName}{'id'}  = $catid;
-        $$refListCatFriends{$catName}{'url'} = $catURL;
+        $$refListCatFriends{$catName}{'id'}   = $catid;
+        $$refListCatFriends{$catName}{'url'}  = $catURL;
+        $$refListCatFriends{$catName}{'name'} = $catName;
       }
     }
     # Number of categories
@@ -2812,6 +3079,7 @@ sub dumpFriends
       my $mechFriends = WWW::Mechanize::Firefox->new(tab => 'current', autodie => 0);
       
       foreach my $cat (sort keys %{$refListCatFriends}) {
+        my $encodedName = encode($CONFIG{'CHARSET'}, $$refListCatFriends{$cat}{'name'});
         # Check status for the current category ($$refListCatFriends{$cat}{'status'})
         # 1 : Opening
         # 2 : Scrolling done
@@ -2820,7 +3088,7 @@ sub dumpFriends
         
         # Opening the Friends Category Tab
         if (!exists($$refListCatFriends{$cat}{'status'})) {
-          $winPb->lblPbCurr1->Text("$STR{'opening'}: $cat");
+          $winPb->lblPbCurr1->Text("$STR{'opening'}: $encodedName");
           $winPb->lblCount1->Text("$count1/$nbrCatFriends");
           $winPb->lblPbCurr2->Text('');
           $winPb->lblCount2->Text('');
@@ -2831,7 +3099,7 @@ sub dumpFriends
         
         # Scrolling the Friends Category Tab
         if ($$refListCatFriends{$cat}{'status'} < 2) {
-          $winPb->lblPbCurr1->Text("$STR{'scrolling'}: $cat");
+          $winPb->lblPbCurr1->Text("$STR{'scrolling'}: $encodedName");
           sleep($CONFIG{'TIME_TO_WAIT'});
           &scrollFriendPage(\$mechFriends, $CONFIG{'TIME_TO_WAIT'});
           $$refListCatFriends{$cat}{'status'} = 2; # Scrolling done
@@ -2839,7 +3107,7 @@ sub dumpFriends
         
         # Downloading the Friends Category Tab
         if ($$refListCatFriends{$cat}{'status'} < 3) {
-          $winPb->lblPbCurr1->Text("$STR{'downloading'}: $cat");
+          $winPb->lblPbCurr1->Text("$STR{'downloading'}: $encodedName");
           my $htmlPage = "$saveDir\\temp\\page.html";
           my $status;
           if ($includeIcons) { $status = $mechFriends->save_content($htmlPage, "$saveDir\\temp"); }
@@ -2851,10 +3119,10 @@ sub dumpFriends
         # Parsing the Friends Category Tab
         my $nbrFriendsDone = keys %{$$refListCatFriends{$cat}{'profilOrder'}};
         if ($$refListCatFriends{$cat}{'status'} < 4) {
-          $winPb->lblPbCurr1->Text("$STR{'parsing'}: $cat (per group of 20)");
+          $winPb->lblPbCurr1->Text("$STR{'parsing'}: $encodedName (per group of 20)");
 
           # Parse by section and groups
-          my $section = $mechFriends->by_id($$refListCatFriends{$cat}{'id'}, one => 1);
+          my $section = $mechFriends->by_id($$refListCatFriends{$cat}{'id'}, any => 1);
           my @groups  = $mechFriends->selector('ul.uiList._262m._4kg', node => $section);
           my $nbrGroups = scalar(@groups);
           if (!$nbrGroups) {
@@ -2969,7 +3237,7 @@ sub dumpFriends
       my $excel    = Excel::Writer::XLSX->new($filename);    # Create the XLSX file
       # One sheet per category
       foreach my $cat (sort keys %{$refListCatFriends}) {
-        &createExcelSheetWithDetails(\$excel, $cat, $$refListCatFriends{$cat}, $includeIcons, $saveDir);
+        &createExcelSheetWithDetails(\$excel, $$refListCatFriends{$cat}{'name'}, $$refListCatFriends{$cat}, $includeIcons, $saveDir);
         $count1++;
         $winPb->lblCount1->Text("$count1/$nbrCatFriends");
         $winPb->pbWinPb1->StepIt();
@@ -3011,8 +3279,9 @@ sub createExcelSheetWithDetails
 {
   # Local variables
   my ($refExcel, $sheetName, $refData, $includeIcons, $saveDir) = @_;
+  my $encodedName = encode($CONFIG{'CHARSET'}, $sheetName);
   
-  $winPb->lblPbCurr1->Text("$STR{'createSheet'}: $sheetName");
+  $winPb->lblPbCurr1->Text("$STR{'createSheet'}: $encodedName");
   # Progress 2
   my $nbrItems = scalar(keys %{$$refData{'profilOrder'}});
   $winPb->lblPbCurr2->Text('');
@@ -3137,50 +3406,68 @@ sub winFriends_Terminate
 sub winEvent
 #--------------------------#
 {
+  # Avoid new thread
+  if ($THR and $THR->is_running()) {
+    Win32::GUI::MessageBox($win, $STR{'warn1'},$STR{'warn1T'},0x40010);
+  } else {
+    # Reset window
+    $winEvent->tfEventID->Text('');
+    $winEvent->tfAuthorID->Text('');
+    $winEvent->tfDataURL->Text('');
+    $winEvent->chGoing->Text('Going');
+    $winEvent->chMaybe->Text('Maybe');
+    $winEvent->chInvited->Text('Invited');
+    $winEvent->chDeclined->Text('Declined');
+    $winEvent->chGoing->Checked(1);
+    $winEvent->chMaybe->Checked(1);
+    $winEvent->chInvited->Checked(1);
+    $winEvent->chDeclined->Checked(1);
+    
+    # Start the thread
+    $THR = threads->create(\&winEventThr);
+    
+    usleep(500000);
+    $winEvent->Center();
+    $winEvent->DoModal();
+  }
+
+}  #--- End winEvent
+
+#--------------------------#
+sub winEventThr
+#--------------------------#
+{
   # Local variables
   my $saveDir = $winEvent->tfDirSaveEvent->Text();
-  my $tempDir = "$PROGDIR\\temp";
+  my $tempDir = "$USERDIR\\temp";
   
-  # Reset window
-  $winEvent->tfEventID->Text('');
-  $winEvent->tfAuthorID->Text('');
-  $winEvent->tfDataURL->Text('');
-  $winEvent->chGoing->Text('Going');
-  $winEvent->chMaybe->Text('Maybe');
-  $winEvent->chInvited->Text('Invited');
-  $winEvent->chDeclined->Text('Declined');
-  $winEvent->chGoing->Checked(1);
-  $winEvent->chMaybe->Checked(1);
-  $winEvent->chInvited->Checked(1);
-  $winEvent->chDeclined->Checked(1);
-  
-  $THR = threads->create(sub {
-    # Deal with crash
-    $SIG{__DIE__} = sub {
-      my $msgErr = $_[0];
-      chomp($msgErr);
-      $msgErr =~ s/[\t\r\n]/ /g;
+  # Deal with crash
+  $SIG{__DIE__} = sub {
+    my $msgErr = $_[0];
+    chomp($msgErr);
+    $msgErr =~ s/[\t\r\n]/ /g;
+    if ($msgErr =~ /NS_ERROR_FILE_IS_LOCKED/) {
+      # Restart a new thread to continue
+      $THR = threads->create(\&winEventThr);
+    } else {
       if ($winConfig->chDebugLogging->Checked()) { &debug($msgErr); }
       $win->ChangeCursor($ARROW);
       $win->Tray->Change(-tip => 'ExtractFace');
       Win32::GUI::MessageBox($winEvent, $STR{'err3'}, $STR{'err1T'}, 0x40010);
-      threads->exit();
-    };
-    
-    my $mech;
-    eval { $mech = WWW::Mechanize::Firefox->new(tab => 'current'); };
-    if ($@) {
-      if ($@ =~ /Failed to connect to/) {
-        $winEvent->btnEventOk->Disable();
-        Win32::GUI::MessageBox($winEvent, $STR{'err1'}, $STR{'err1T'}, 0x40010);
-      }
-      threads->exit();
     }
-    my $title    = $mech->title();
-    $title       =~ s/[\<\>\:\"\/\\\|\?\*]/-/g;
-    my $decTitle = encode("iso-8859-1", $title);
-    $winEvent->tfEventName->Text($decTitle);
-    
+  };
+  
+  my $mech;
+  eval { $mech = WWW::Mechanize::Firefox->new(tab => 'current'); };
+  if ($@) {
+    if ($@ =~ /Failed to connect to/) {
+      $winEvent->btnEventOk->Disable();
+      Win32::GUI::MessageBox($winEvent, $STR{'err1'}, $STR{'err1T'}, 0x40010);
+    }
+    threads->exit();
+  }
+  
+  if ($mech->uri() =~ /facebook.com/) {
     # Valid current page
     my $currURL = $mech->uri();
     my $idEvent;
@@ -3210,7 +3497,10 @@ sub winEvent
     my $file_as_string = do { local $/ = <$tmp> };
     $file_as_string =~ s/[\r\n]//g;
     # Event ID
-    if ($file_as_string =~ /"eventID":"([^\"]+)"/ ) { $winEvent->tfEventID->Text($1);  }
+    if ($file_as_string =~ /"eventID":"([^\"]+)"/ ) {
+      $winEvent->tfEventID->Text($1);
+      $winEvent->tfEventName->Text($1);
+    }
     # Author ID
     if ($file_as_string =~ /"authorID":"([^\"]+)"/) { $winEvent->tfAuthorID->Text($1); }
     # URL of content
@@ -3254,17 +3544,15 @@ sub winEvent
     
     # Delete temporary files
     if ($winConfig->chDelTempFiles->Checked()) { remove_tree($tempDir); }
-    
-    $winEvent->lblInProgress->Text('');
-    $winEvent->ChangeCursor($ARROW);
-    
-    # Ready ?
-    &isDumpEventReady();
-  });
-  $winEvent->Center();
-  $winEvent->DoModal();
+  } else { Win32::GUI::MessageBox($winEvent, $STR{'warn4'}, $STR{'err1T'}, 0x40010); }
+  
+  $winEvent->lblInProgress->Text('');
+  $winEvent->ChangeCursor($ARROW);
+  
+  # Ready ?
+  &isDumpEventReady();
 
-}  #--- End winEvent
+}  #--- End winEventThr
 
 #--------------------------#
 sub tfEventName_Change
@@ -3571,6 +3859,7 @@ sub dumpEvent
       $data =~ s/[\r\n]//g;
       my @tabData = split(/},/, $data);
       undef $data;
+      my $nbrLines = scalar(@tabData);
       foreach my $line (@tabData) {
         my %memberData;
         if ($line =~ /{("uniqueID":[^\}]+)}/) {
@@ -3614,9 +3903,9 @@ sub dumpEvent
               $$refLists{$memberData{'tab'}}{'profilName'}{$memberData{'uniqueID'}} = $name;
             }
             $count++;
-            $winPb2->lblCount->Text($count);
           }
-        }
+        } else { $count++; }
+        $winPb2->lblCount->Text("$count/$nbrLines");
       }
       $step = 2;
     } else {
@@ -3709,418 +3998,68 @@ sub winEvent_Terminate
 }  #--- End winEvent_Terminate
 
 #--------------------------#
-sub scrollChat
-#--------------------------#
-{
-  # Avoid new thread
-  if ($THR and $THR->is_running()) {
-    Win32::GUI::MessageBox($win, $STR{'warn1'},$STR{'warn1T'},0x40010);
-  } else {
-    # Start the thread
-    my $nbrRetries = 0;
-    my $count      = 0;
-    $THR = threads->create(\&scrollChatThr, $nbrRetries, $count);
-  }
-}  #--- End scrollChat
-
-#--------------------------#
-sub scrollChatThr
-#--------------------------#
-{
-  # Local variables
-  my ($nbrRetries, $count) = @_;
-  
-  # Cancel button
-  $SIG{'KILL'} = sub {
-    # Turn off progress bar
-    $winPb2->lblPbCurr->Text('');
-    $winPb2->lblCount->Text('');
-    &winPb2_Terminate;
-    $win->ChangeCursor($ARROW);
-    $win->Tray->Change(-tip => $STR{'scrollChatC'});
-    threads->exit();
-  };
-  
-  # Deal with crash
-  $SIG{__DIE__} = sub {
-    my $msgErr = $_[0];
-    chomp($msgErr);
-    $msgErr =~ s/[\t\r\n]/ /g;
-    if ($winConfig->chDebugLogging->Checked()) { &debug($msgErr); }
-    if ($msgErr =~ /problem connecting/) {
-      Win32::GUI::MessageBox($win, $STR{'err1'}, $STR{'err1T'}, 0x40010);
-      # Turn off progress bar
-      $winPb2->lblPbCurr->Text('');
-      $winPb2->lblCount->Text('');
-      &winPb2_Terminate;
-      $win->ChangeCursor($ARROW);
-      $win->Tray->Change(-tip => 'ExtractFace');
-    } else {
-      # Retry 10 times
-      if ($msgErr !~ /NS_ERROR_FILE_IS_LOCKED/) { $nbrRetries++; }
-      if ($nbrRetries < $CONFIG{'NBR_RESUME'}) {
-        # Restart a new thread to continue
-        if ($msgErr !~ /NS_ERROR_FILE_IS_LOCKED/) { $winPb2->lblPbCurr->Text($STR{'crash'}.'...'); }
-        sleep(2);
-        $THR = threads->create(\&scrollChatThr, $nbrRetries, $count);
-      } else {
-        Win32::GUI::MessageBox($win, $STR{'err2'}, $STR{'err1T'}, 0x40010);
-      # Turn off progress bar
-      $winPb2->lblPbCurr->Text('');
-      $winPb2->lblCount->Text('');
-      &winPb2_Terminate;
-      $win->ChangeCursor($ARROW);
-      $win->Tray->Change(-tip => 'ExtractFace');
-      }
-    }
-    threads->exit();
-  };
-
-  # First execution
-  if (!$nbrRetries) {
-    $win->ChangeCursor($HOURGLASS);
-    $win->Tray->Change(-tip => $STR{'scrollChatP'}.'...');
-    
-    # Turn on progress bar
-    $winPb2->Center();
-    $winPb2->Show();
-    $winPb2->lblPbCurr->Text('');
-    $winPb2->lblCount->Text('');
-    $win->Disable();
-  }
-  
-  my $mech;
-  eval { $mech = WWW::Mechanize::Firefox->new(tab => 'current'); };
-  if ($@) {
-    if ($@ =~ /Failed to connect to/) {
-      Win32::GUI::MessageBox($win, $STR{'err1'}, $STR{'err1T'}, 0x40010);
-    }
-    threads->exit();
-  }
-  
-  $winPb2->lblPbCurr->Text($STR{'scrollChatP'}.'...');
-  my $maxScroll = $winConfig->tfMaxScrollChat->Text();
-  while (1) {
-    if ($maxScroll and $count >= $maxScroll) { last; } # Maximum scrolling reached
-    my $loadOlderCode = $mech->selector('div._3hg', one => 1);
-    if ($loadOlderCode->{outerHTML} =~ /hidden_elem/) { last; }
-    else {
-      my $left;
-      if ($loadOlderCode->{innerHTML} =~ /$_ \(<span>(\d+)<\/span>\)/) { $left = $1; }
-      if ($left) {
-        $winPb2->lblCount->Text($left);
-        $count++;
-      }
-      my $loadOlderLink = $mech->selector('a', any => 1, node => $loadOlderCode);
-      if ($loadOlderLink) { $loadOlderLink->click(); }
-      else { last; }
-    }
-  }
-  
-  # Turn off progress bar
-  $winPb2->lblPbCurr->Text('');
-  $winPb2->lblCount->Text('');
-  &winPb2_Terminate;
-  
-  $win->Tray->Change(-tip => $STR{'scrollChatF'});
-  if (!$win->IsVisible()) {
-    $win->Tray->Change( -balloon_icon  => 'info'              ,
-                        -balloon_title => 'ExtractFace'       ,
-                        -balloon_tip   => $STR{'scrollChatF'} , );
-    $win->Tray->ShowBalloon(1);
-  }
-  $win->ChangeCursor($ARROW);
-
-}  #--- End scrollChatThr
-
-#--------------------------#
-sub loadNewMsg
-#--------------------------#
-{
-  # Avoid new thread
-  if ($THR and $THR->is_running()) {
-    Win32::GUI::MessageBox($win, $STR{'warn1'},$STR{'warn1T'},0x40010);
-  } else {
-    # Start the thread
-    my $nbrRetries = 0;
-    my $count      = 0;
-    $THR = threads->create(\&loadNewMsgThr, $nbrRetries, $count);
-  }
-}  #--- End loadNewMsg
-
-#--------------------------#
-sub loadNewMsgThr
-#--------------------------#
-{
-  # Local variables
-  my ($nbrRetries, $count) = @_;
-  
-  # Cancel button
-  $SIG{'KILL'} = sub {
-    # Turn off progress bar
-    $winPb2->lblPbCurr->Text('');
-    $winPb2->lblCount->Text('');
-    &winPb2_Terminate;
-    $win->ChangeCursor($ARROW);
-    $win->Tray->Change(-tip => $STR{'scrollChat2C'});
-    threads->exit();
-  };
-  
-  # Deal with crash
-  $SIG{__DIE__} = sub {
-    my $msgErr = $_[0];
-    chomp($msgErr);
-    $msgErr =~ s/[\t\r\n]/ /g;
-    if ($winConfig->chDebugLogging->Checked()) { &debug($msgErr); }
-    if ($msgErr =~ /problem connecting/) {
-      Win32::GUI::MessageBox($win, $STR{'err1'}, $STR{'err1T'}, 0x40010);
-      # Turn off progress bar
-      $winPb2->lblPbCurr->Text('');
-      $winPb2->lblCount->Text('');
-      &winPb2_Terminate;
-      $win->ChangeCursor($ARROW);
-      $win->Tray->Change(-tip => 'ExtractFace');
-    } else {
-      # Retry 10 times
-      if ($msgErr !~ /NS_ERROR_FILE_IS_LOCKED/) { $nbrRetries++; }
-      if ($nbrRetries < $CONFIG{'NBR_RESUME'}) {
-        # Restart a new thread to continue
-        if ($msgErr !~ /NS_ERROR_FILE_IS_LOCKED/) { $winPb2->lblPbCurr->Text($STR{'crash'}.'...'); }
-        sleep(2);
-        $THR = threads->create(\&loadNewMsgThr, $nbrRetries, $count);
-      } else {
-        Win32::GUI::MessageBox($win, $STR{'err2'}, $STR{'err1T'}, 0x40010);
-      # Turn off progress bar
-      $winPb2->lblPbCurr->Text('');
-      $winPb2->lblCount->Text('');
-      &winPb2_Terminate;
-      $win->ChangeCursor($ARROW);
-      $win->Tray->Change(-tip => 'ExtractFace');
-      }
-    }
-    threads->exit();
-  };
-
-  # First execution
-  if (!$nbrRetries) {
-    $win->ChangeCursor($HOURGLASS);
-    $win->Tray->Change(-tip => $STR{'scrollChat2P'}.'...');
-    
-    # Turn on progress bar
-    $winPb2->Center();
-    $winPb2->Show();
-    $winPb2->lblPbCurr->Text('');
-    $winPb2->lblCount->Text('');
-    $win->Disable();
-  }
-  
-  my $mech;
-  eval { $mech = WWW::Mechanize::Firefox->new(tab => 'current'); };
-  if ($@) {
-    if ($@ =~ /Failed to connect to/) {
-      Win32::GUI::MessageBox($win, $STR{'err1'}, $STR{'err1T'}, 0x40010);
-    }
-    threads->exit();
-  }
-  
-  $winPb2->lblPbCurr->Text($STR{'scrollChat2P'}.'...');
-  my $maxScroll = $winConfig->tfMaxScrollChat->Text();
-  while (1) {
-    if ($maxScroll and $count >= $maxScroll) { last; } # Maximum scrolling reached
-    my $loadNewerCode = $mech->selector('div._3hh', one => 1);
-    if ($loadNewerCode->{outerHTML} =~ /hidden_elem/) { last; }
-    else {
-      my $loadNewerLink = $mech->selector('a', any => 1, node => $loadNewerCode);
-      if ($loadNewerLink) { $loadNewerLink->click(); }
-      else { last; }
-    }
-  }
-  
-  # Turn off progress bar
-  $winPb2->lblPbCurr->Text('');
-  $winPb2->lblCount->Text('');
-  &winPb2_Terminate;
-  
-  $win->Tray->Change(-tip => $STR{'scrollChat2F'});
-  if (!$win->IsVisible()) {
-    $win->Tray->Change( -balloon_icon  => 'info'               ,
-                        -balloon_title => 'ExtractFace'        ,
-                        -balloon_tip   => $STR{'scrollChat2F'} , );
-    $win->Tray->ShowBalloon(1);
-  }
-  $win->ChangeCursor($ARROW);
-
-}  #--- End loadNewMsgThr
-
-#--------------------------#
-sub loadOldMsg
-#--------------------------#
-{
-  # Avoid new thread
-  if ($THR and $THR->is_running()) {
-    Win32::GUI::MessageBox($win, $STR{'warn1'},$STR{'warn1T'},0x40010);
-  } else {
-    # Start the thread
-    my $nbrRetries = 0;
-    my $count      = 0;
-    $THR = threads->create(\&loadOldMsgThr, $nbrRetries, $count);
-  }
-}  #--- End loadOldMsg
-
-#--------------------------#
-sub loadOldMsgThr
-#--------------------------#
-{
-  # Local variables
-  my ($nbrRetries, $count) = @_;
-  
-  # Cancel button
-  $SIG{'KILL'} = sub {
-    # Turn off progress bar
-    $winPb2->lblPbCurr->Text('');
-    $winPb2->lblCount->Text('');
-    &winPb2_Terminate;
-    $win->ChangeCursor($ARROW);
-    $win->Tray->Change(-tip => $STR{'scrollChat3C'});
-    threads->exit();
-  };
-  
-  # Deal with crash
-  $SIG{__DIE__} = sub {
-    my $msgErr = $_[0];
-    chomp($msgErr);
-    $msgErr =~ s/[\t\r\n]/ /g;
-    if ($winConfig->chDebugLogging->Checked()) { &debug($msgErr); }
-    if ($msgErr =~ /problem connecting/) {
-      Win32::GUI::MessageBox($win, $STR{'err1'}, $STR{'err1T'}, 0x40010);
-      # Turn off progress bar
-      $winPb2->lblPbCurr->Text('');
-      $winPb2->lblCount->Text('');
-      &winPb2_Terminate;
-      $win->ChangeCursor($ARROW);
-      $win->Tray->Change(-tip => 'ExtractFace');
-    } else {
-      # Retry 10 times
-      if ($msgErr !~ /NS_ERROR_FILE_IS_LOCKED/) { $nbrRetries++; }
-      if ($nbrRetries < $CONFIG{'NBR_RESUME'}) {
-        # Restart a new thread to continue
-        if ($msgErr !~ /NS_ERROR_FILE_IS_LOCKED/) { $winPb2->lblPbCurr->Text($STR{'crash'}.'...'); }
-        sleep(2);
-        $THR = threads->create(\&loadOldMsgThr, $nbrRetries, $count);
-      } else {
-        Win32::GUI::MessageBox($win, $STR{'err2'}, $STR{'err1T'}, 0x40010);
-      # Turn off progress bar
-      $winPb2->lblPbCurr->Text('');
-      $winPb2->lblCount->Text('');
-      &winPb2_Terminate;
-      $win->ChangeCursor($ARROW);
-      $win->Tray->Change(-tip => 'ExtractFace');
-      }
-    }
-    threads->exit();
-  };
-
-  # First execution
-  if (!$nbrRetries) {
-    $win->ChangeCursor($HOURGLASS);
-    $win->Tray->Change(-tip => $STR{'scrollChat3P'}.'...');
-    
-    # Turn on progress bar
-    $winPb2->Center();
-    $winPb2->Show();
-    $winPb2->lblPbCurr->Text('');
-    $winPb2->lblCount->Text('');
-    $win->Disable();
-  }
-  
-  my $mech;
-  eval { $mech = WWW::Mechanize::Firefox->new(tab => 'current'); };
-  if ($@) {
-    if ($@ =~ /Failed to connect to/) {
-      Win32::GUI::MessageBox($win, $STR{'err1'}, $STR{'err1T'}, 0x40010);
-    }
-    threads->exit();
-  }
-  
-  $winPb2->lblPbCurr->Text($STR{'scrollChat3P'}.'...');
-  my $maxScroll = $winConfig->tfMaxScrollChat->Text();
-  while (1) {
-    if ($maxScroll and $count >= $maxScroll) { last; } # Maximum scrolling reached
-    my $loadOlderCode = ($mech->selector('div._3hg'))[1];
-    if ($loadOlderCode->{outerHTML} =~ /hidden_elem/) { last; }
-    else {
-      print $loadOlderCode->{innerHTML} . "\n\n";
-      my $loadOlderLink = $mech->selector('a', any => 1, node => $loadOlderCode);
-      if ($loadOlderLink) {
-        $loadOlderLink->click();
-      }
-      else { last; }
-    }
-  }
-  
-  # Turn off progress bar
-  $winPb2->lblPbCurr->Text('');
-  $winPb2->lblCount->Text('');
-  &winPb2_Terminate;
-  
-  $win->Tray->Change(-tip => $STR{'scrollChat3F'});
-  if (!$win->IsVisible()) {
-    $win->Tray->Change( -balloon_icon  => 'info'               ,
-                        -balloon_title => 'ExtractFace'        ,
-                        -balloon_tip   => $STR{'scrollChat3F'} , );
-    $win->Tray->ShowBalloon(1);
-  }
-  $win->ChangeCursor($ARROW);
-  
-}  #--- End loadOldMsgThr
-
-#--------------------------#
 sub winContrib
 #--------------------------#
 {
-  $THR = threads->create(sub {
-    # Deal with crash
-    $SIG{__DIE__} = sub {
-      my $msgErr = $_[0];
-      chomp($msgErr);
-      $msgErr =~ s/[\t\r\n]/ /g;
+  # Avoid new thread
+  if ($THR and $THR->is_running()) {
+    Win32::GUI::MessageBox($win, $STR{'warn1'},$STR{'warn1T'},0x40010);
+  } else {
+    # Start the thread
+    $THR = threads->create(\&winContribThr);
+    
+    usleep(500000);
+    $winContrib->Center($win);
+    $winContrib->DoModal();
+  }
+
+}  #--- End winContrib
+
+#--------------------------#
+sub winContribThr
+#--------------------------#
+{
+  # Deal with crash
+  $SIG{__DIE__} = sub {
+    my $msgErr = $_[0];
+    chomp($msgErr);
+    $msgErr =~ s/[\t\r\n]/ /g;
+    if ($msgErr =~ /NS_ERROR_FILE_IS_LOCKED/) {
+      # Restart a new thread to continue
+      $THR = threads->create(\&winContribThr);
+    } else {
       if ($winConfig->chDebugLogging->Checked()) { &debug($msgErr); }
       $win->ChangeCursor($ARROW);
       $win->Tray->Change(-tip => 'ExtractFace');
       Win32::GUI::MessageBox($winContrib, $STR{'err3'}, $STR{'err1T'}, 0x40010);
-      threads->exit();
-    };
-    
-    my $mech;
-    eval { $mech = WWW::Mechanize::Firefox->new(tab => 'current'); };
-    if ($@) {
-      if ($@ =~ /Failed to connect to/) {
-        $winContrib->btnContribOk->Disable();
-        Win32::GUI::MessageBox($winContrib, $STR{'err1'}, $STR{'err1T'}, 0x40010);
-      }
-      threads->exit();
     }
-
-    my $currURL  = $mech->uri();
-    if ($currURL =~ /https:\/\/www.facebook.com\//) {
-      my $title    = $mech->title();
-      $title       =~ s/[\<\>\:\"\/\\\|\?\*]/-/g;
-      my $decTitle = encode("iso-8859-1", $title);
-      $winContrib->tfContribName->Text($decTitle);
-    } else {
+  };
+  
+  my $mech;
+  eval { $mech = WWW::Mechanize::Firefox->new(tab => 'current'); };
+  if ($@) {
+    if ($@ =~ /Failed to connect to/) {
       $winContrib->btnContribOk->Disable();
-      Win32::GUI::MessageBox($winContrib, $STR{'warn4'}, $STR{'warn2T'}, 0x40010);
-      threads->exit();
+      Win32::GUI::MessageBox($winContrib, $STR{'err1'}, $STR{'err1T'}, 0x40010);
     }
-    
-    # Ready ?
-    &isDumpContribReady();
-  });
-  usleep(500000);
-  $winContrib->Center($win);
-  $winContrib->DoModal();
+    threads->exit();
+  }
 
-}  #--- End winContrib
+  my $currURL  = $mech->uri();
+  if ($currURL =~ /facebook.com/) {
+    my $title;
+    if    ($currURL =~ /https:\/\/www.facebook.com\/([^\/\?]+)/                ) { $title = $1; }
+    elsif ($currURL =~ /https:\/\/www.facebook.com\/profile.php\?id=([^\/\&]+)/) { $title = $1; }
+    $winContrib->tfContribName->Text($title);
+  } else {
+    $winContrib->btnContribOk->Disable();
+    Win32::GUI::MessageBox($winContrib, $STR{'warn4'}, $STR{'warn2T'}, 0x40010);
+  }
+  
+  # Ready ?
+  &isDumpContribReady();
+
+}  #--- End winContribThr
 
 #--------------------------#
 sub tfContribName_Change
@@ -4258,6 +4197,10 @@ sub chContribLikes_Click
 sub chContribVPosts_Click
 #--------------------------#
 {
+  if ($winContrib->chContribVPosts->Checked()) {
+    $winContrib->chContribDontScrollVPosts->Enable();
+  } else { $winContrib->chContribDontScrollVPosts->Disable(); }
+  
   # Ready ?
   &isDumpContribReady();
 
@@ -4413,17 +4356,9 @@ sub dumpContrib
     $win->ChangeCursor($HOURGLASS);
     $win->Tray->Change(-tip => $STR{'dumpContribP'}.'...');
     
-    # Save the content (to get all icons)
-    $winPb->lblPbCurr1->Text($STR{'saveTab'}.'...');
-    if (!-d "$saveDir\\temp") { mkdir("$saveDir\\temp"); }
+    # Create image folder
     if (!-d "$saveDir\\images_$contribName" and $winContrib->chContribProfileIcons->Checked()) {
       mkdir("$saveDir\\images_$contribName");
-    }
-    my $htmlPage = "$saveDir\\temp\\page.html";
-    my $status;
-    if ($winContrib->chContribProfileIcons->Checked()) {
-      $status = $mech->save_content($htmlPage, "$saveDir\\temp");
-      while ($status->{currentState} != $status->{PERSIST_STATE_FINISHED}) { usleep(100000); }
     }
     $step = 2;
     $done++;
@@ -4445,7 +4380,6 @@ sub dumpContrib
     my @commentNodes = $mech->selector('a.UFIImageBlockImage');
     my $nbrCommentsToDo = scalar(@commentNodes);
     $winPb->pbWinPb2->SetRange(0, $nbrCommentsToDo);
-    #$winPb->pbWinPb2->SetPos(0);
     $winPb->pbWinPb2->SetStep(1);
     $winPb->lblCount2->Text("$nbrComments/$nbrCommentsToDo");
     my $i = 0;
@@ -4476,10 +4410,18 @@ sub dumpContrib
               $$refComments{$commentUrl}{'Id'}   = $commentId;
               $$refComments{$commentUrl}{'Name'} = $commentName;
               
-              # Save the profil icon
-              if ($winContrib->chContribProfileIcons->Checked() and $commentImg =~ /\/([^\/\?]+)\?/) { # Include profile icons
-                my $imgFilename = $1; # Replace image name by profil id
-                rcopy("$saveDir\\temp\\$imgFilename", "$saveDir\\images_$contribName\\$commentId\.jpg"); # Copy image
+              # Include profile icon
+              if ($winContrib->chContribProfileIcons->Checked() and $commentImg) {
+                my $imgUrl = $commentImg =~ s/&amp;/&/gr;
+                if (!-e("$saveDir\\images_$contribName\\$commentId\.jpg")) {
+                  $mech->save_url($imgUrl, "$saveDir\\images_$contribName\\$commentId\.jpg");
+                # File already exists, test if corrupted, if so, download it again
+                } else {
+                  my $info = image_info("$saveDir\\images_$contribName\\$commentId\.jpg");
+                  if ($info->{error}) {
+                    $mech->save_url($imgUrl, "$saveDir\\images_$contribName\\$commentId\.jpg");
+                  }
+                }
                 $$refComments{$commentUrl}{'ImgPath'} = "images_$contribName\\$commentId\.jpg";
               }
             }
@@ -4639,13 +4581,10 @@ sub dumpContrib
     
     # First execution
     if (!$nbrVPosts) {
-      # Display all Visitor Posts
-      $winPb->lblPbCurr1->Text("$STR{'scrolling'} $STR{'chContribVPosts'}...");
-      &scrollVPostsPage(\$mech, $CONFIG{'TIME_TO_WAIT'});
-      if ($winContrib->chContribProfileIcons->Checked()) {
-        my $htmlPage = "$saveDir\\temp\\pageWithVPosts.html";
-        my $status = $mech->save_content($htmlPage, "$saveDir\\temp");
-        while ($status->{currentState} != $status->{PERSIST_STATE_FINISHED}) { usleep(100000); }
+      if (!$winContrib->chContribDontScrollVPosts->Checked()) {
+        # Display all Visitor Posts
+        $winPb->lblPbCurr1->Text("$STR{'scrolling'} $STR{'chContribVPosts'}...");
+        &scrollVPostsPage(\$mech, $CONFIG{'TIME_TO_WAIT'});
       }
       $winPb->lblPbCurr2->Text('');
       $winPb->lblCount2->Text('');
@@ -4656,12 +4595,11 @@ sub dumpContrib
     my @vPostsCode = $mech->selector('div._5x46');
     my $nbrVPostsToDo = scalar(@vPostsCode);
     $winPb->pbWinPb2->SetRange(0, $nbrVPostsToDo);
-    $winPb->pbWinPb2->SetPos($nbrVPosts);
     $winPb->pbWinPb2->SetStep(1);
     $winPb->lblCount2->Text("$nbrVPosts/$nbrVPostsToDo");
     my $i = 0;
     foreach my $vPostCode (@vPostsCode) {
-      if ($i >= $nbrComments) {
+      if ($i >= $nbrVPosts) {
         my $vPostsId;
         my $vPostsUrl;
         my $vPostsImg;
@@ -4681,19 +4619,27 @@ sub dumpContrib
             $$refVPosts{$vPostsUrl}{'Nbr'}++;
           # Add a new entry
           } else {
-            $nbrVPosts++;
             $$refVPosts{$vPostsUrl}{'Nbr'}  = 1;
             $$refVPosts{$vPostsUrl}{'Id'}   = $vPostsId;
             $$refVPosts{$vPostsUrl}{'Name'} = $vPostsName;
             
-            # Save the profil icon
-            if ($winContrib->chContribProfileIcons->Checked() and $vPostsImg =~ /\/([^\/\?]+)\?/) { # Include profile icons
-              my $imgFilename = $1; # Replace image name by profil id
-              rcopy("$saveDir\\temp\\$imgFilename", "$saveDir\\images_$contribName\\$vPostsId\.jpg"); # Copy image
+            # Include profile icon
+            if ($winContrib->chContribProfileIcons->Checked() and $vPostsImg) {
+              my $imgUrl = $vPostsImg =~ s/&amp;/&/gr;
+              if (!-e("$saveDir\\images_$contribName\\$vPostsId\.jpg")) {
+                $mech->save_url($imgUrl, "$saveDir\\images_$contribName\\$vPostsId\.jpg");
+              # File already exists, test if corrupted, if so, download it again
+              } else {
+                my $info = image_info("$saveDir\\images_$contribName\\$vPostsId\.jpg");
+                if ($info->{error}) {
+                  $mech->save_url($imgUrl, "$saveDir\\images_$contribName\\$vPostsId\.jpg");
+                }
+              }
               $$refVPosts{$vPostsUrl}{'ImgPath'} = "images_$contribName\\$vPostsId\.jpg";
             }
           }
         }
+        $nbrVPosts++;
         $winPb->pbWinPb2->StepIt();
         $winPb->lblCount2->Text("$nbrVPosts/$nbrVPostsToDo");
       }
@@ -4878,51 +4824,489 @@ sub createExcelSheet
 
 }  #--- End createExcelSheet
 
+
+#--------------------------#
+sub scrollChat
+#--------------------------#
+{
+  # Avoid new thread
+  if ($THR and $THR->is_running()) {
+    Win32::GUI::MessageBox($win, $STR{'warn1'},$STR{'warn1T'},0x40010);
+  } else {
+    # Start the thread
+    my $nbrRetries = 0;
+    my $count      = 0;
+    $THR = threads->create(\&scrollChatThr, $nbrRetries, $count);
+  }
+}  #--- End scrollChat
+
+#--------------------------#
+sub scrollChatThr
+#--------------------------#
+{
+  # Local variables
+  my ($nbrRetries, $count) = @_;
+  
+  # Cancel button
+  $SIG{'KILL'} = sub {
+    # Turn off progress bar
+    $winPb2->lblPbCurr->Text('');
+    $winPb2->lblCount->Text('');
+    &winPb2_Terminate;
+    $win->ChangeCursor($ARROW);
+    $win->Tray->Change(-tip => $STR{'scrollChatC'});
+    threads->exit();
+  };
+  
+  # Deal with crash
+  $SIG{__DIE__} = sub {
+    my $msgErr = $_[0];
+    chomp($msgErr);
+    $msgErr =~ s/[\t\r\n]/ /g;
+    if ($winConfig->chDebugLogging->Checked()) { &debug($msgErr); }
+    if ($msgErr =~ /problem connecting/) {
+      Win32::GUI::MessageBox($win, $STR{'err1'}, $STR{'err1T'}, 0x40010);
+      # Turn off progress bar
+      $winPb2->lblPbCurr->Text('');
+      $winPb2->lblCount->Text('');
+      &winPb2_Terminate;
+      $win->ChangeCursor($ARROW);
+      $win->Tray->Change(-tip => 'ExtractFace');
+    } else {
+      # Retry 10 times
+      if ($msgErr !~ /NS_ERROR_FILE_IS_LOCKED/) { $nbrRetries++; }
+      if ($nbrRetries < $CONFIG{'NBR_RESUME'}) {
+        # Restart a new thread to continue
+        if ($msgErr !~ /NS_ERROR_FILE_IS_LOCKED/) { $winPb2->lblPbCurr->Text($STR{'crash'}.'...'); }
+        sleep(2);
+        $THR = threads->create(\&scrollChatThr, $nbrRetries, $count);
+      } else {
+        Win32::GUI::MessageBox($win, $STR{'err2'}, $STR{'err1T'}, 0x40010);
+      # Turn off progress bar
+      $winPb2->lblPbCurr->Text('');
+      $winPb2->lblCount->Text('');
+      &winPb2_Terminate;
+      $win->ChangeCursor($ARROW);
+      $win->Tray->Change(-tip => 'ExtractFace');
+      }
+    }
+    threads->exit();
+  };
+
+  # First execution
+  if (!$nbrRetries) {
+    $win->ChangeCursor($HOURGLASS);
+    $win->Tray->Change(-tip => $STR{'scrollChatP'}.'...');
+    
+    # Turn on progress bar
+    $winPb2->Center();
+    $winPb2->Show();
+    $winPb2->lblPbCurr->Text('');
+    $winPb2->lblCount->Text('');
+    $win->Disable();
+  }
+  
+  my $mech;
+  eval { $mech = WWW::Mechanize::Firefox->new(tab => 'current'); };
+  if ($@) {
+    if ($@ =~ /Failed to connect to/) {
+      Win32::GUI::MessageBox($win, $STR{'err1'}, $STR{'err1T'}, 0x40010);
+    }
+    threads->exit();
+  }
+  
+  if ($mech->uri() =~ /facebook.com/) {
+    $winPb2->lblPbCurr->Text($STR{'scrollChatP'}.'...');
+    my $maxScrollChatByDate = $winConfig->rbMaxScrollChatByDate->Checked();
+    my $maxDate;
+    my $maxScrollChat;
+    if ($maxScrollChatByDate) {
+      my ($d, $m, $y) = $winConfig->dtMaxScrollChatByDate->GetDate();
+      $maxDate        = timelocal(0,0,0,$d,$m-1,$y); # Store in Unixtime format
+    } else { $maxScrollChat = $winConfig->tfMaxScrollChat->Text(); }
+    
+    while (1) {
+      # Scroll again
+      if ($maxScrollChatByDate and $maxDate) { # Stop by date
+        my $firstDisplayedDate = ($mech->selector('abbr._35.timestamp'))[0];
+        if ($firstDisplayedDate->{outerHTML} =~ /data-utime="([^\"]+)"/) {
+          my $date = $1;
+          my ($s,$min,$h,$d,$m,$y,$d_w,$ha,$isDST) = localtime($date);
+          my $dateOnly = timelocal(0,0,0,$d,$m,$y+1900);
+          if ($dateOnly <= $maxDate) { last; }
+        }
+      } elsif ($maxScrollChat and $count >= $maxScrollChat) { last; } # Stop by page
+      
+      my $loadOlderCode = $mech->selector('div._3hg', one => 1);
+      if ($loadOlderCode->{outerHTML} =~ /hidden_elem/) { last; }
+      else {
+        my $left;
+        if ($loadOlderCode->{innerHTML} =~ /$_ \(<span>(\d+)<\/span>\)/) { $left = $1; }
+        if ($left) {
+          $winPb2->lblCount->Text($left);
+          $count++;
+        }
+        my $loadOlderLink = $mech->selector('a', any => 1, node => $loadOlderCode);
+        if ($loadOlderLink) { $loadOlderLink->click(); }
+        else { last; }
+      }
+    }
+    
+    $win->Tray->Change(-tip => $STR{'scrollChatF'});
+    if (!$win->IsVisible()) {
+      $win->Tray->Change( -balloon_icon  => 'info'              ,
+                          -balloon_title => 'ExtractFace'       ,
+                          -balloon_tip   => $STR{'scrollChatF'} , );
+      $win->Tray->ShowBalloon(1);
+    }
+  } else { Win32::GUI::MessageBox($winPb2, $STR{'warn4'}, $STR{'err1T'}, 0x40010); }
+  
+  # Turn off progress bar
+  $win->ChangeCursor($ARROW);
+  $winPb2->lblPbCurr->Text('');
+  $winPb2->lblCount->Text('');
+  &winPb2_Terminate;
+
+}  #--- End scrollChatThr
+
+#--------------------------#
+sub loadNewMsg
+#--------------------------#
+{
+  # Avoid new thread
+  if ($THR and $THR->is_running()) {
+    Win32::GUI::MessageBox($win, $STR{'warn1'},$STR{'warn1T'},0x40010);
+  } else {
+    # Start the thread
+    my $nbrRetries = 0;
+    my $count      = 0;
+    $THR = threads->create(\&loadNewMsgThr, $nbrRetries, $count);
+  }
+}  #--- End loadNewMsg
+
+#--------------------------#
+sub loadNewMsgThr
+#--------------------------#
+{
+  # Local variables
+  my ($nbrRetries, $count) = @_;
+  
+  # Cancel button
+  $SIG{'KILL'} = sub {
+    # Turn off progress bar
+    $winPb2->lblPbCurr->Text('');
+    $winPb2->lblCount->Text('');
+    &winPb2_Terminate;
+    $win->ChangeCursor($ARROW);
+    $win->Tray->Change(-tip => $STR{'scrollChat2C'});
+    threads->exit();
+  };
+  
+  # Deal with crash
+  $SIG{__DIE__} = sub {
+    my $msgErr = $_[0];
+    chomp($msgErr);
+    $msgErr =~ s/[\t\r\n]/ /g;
+    if ($winConfig->chDebugLogging->Checked()) { &debug($msgErr); }
+    if ($msgErr =~ /problem connecting/) {
+      Win32::GUI::MessageBox($win, $STR{'err1'}, $STR{'err1T'}, 0x40010);
+      # Turn off progress bar
+      $winPb2->lblPbCurr->Text('');
+      $winPb2->lblCount->Text('');
+      &winPb2_Terminate;
+      $win->ChangeCursor($ARROW);
+      $win->Tray->Change(-tip => 'ExtractFace');
+    } else {
+      # Retry 10 times
+      if ($msgErr !~ /NS_ERROR_FILE_IS_LOCKED/) { $nbrRetries++; }
+      if ($nbrRetries < $CONFIG{'NBR_RESUME'}) {
+        # Restart a new thread to continue
+        if ($msgErr !~ /NS_ERROR_FILE_IS_LOCKED/) { $winPb2->lblPbCurr->Text($STR{'crash'}.'...'); }
+        sleep(2);
+        $THR = threads->create(\&loadNewMsgThr, $nbrRetries, $count);
+      } else {
+        Win32::GUI::MessageBox($win, $STR{'err2'}, $STR{'err1T'}, 0x40010);
+      # Turn off progress bar
+      $winPb2->lblPbCurr->Text('');
+      $winPb2->lblCount->Text('');
+      &winPb2_Terminate;
+      $win->ChangeCursor($ARROW);
+      $win->Tray->Change(-tip => 'ExtractFace');
+      }
+    }
+    threads->exit();
+  };
+
+  # First execution
+  if (!$nbrRetries) {
+    $win->ChangeCursor($HOURGLASS);
+    $win->Tray->Change(-tip => $STR{'scrollChat2P'}.'...');
+    
+    # Turn on progress bar
+    $winPb2->Center();
+    $winPb2->Show();
+    $winPb2->lblPbCurr->Text('');
+    $winPb2->lblCount->Text('');
+    $win->Disable();
+  }
+  
+  my $mech;
+  eval { $mech = WWW::Mechanize::Firefox->new(tab => 'current'); };
+  if ($@) {
+    if ($@ =~ /Failed to connect to/) {
+      Win32::GUI::MessageBox($win, $STR{'err1'}, $STR{'err1T'}, 0x40010);
+    }
+    threads->exit();
+  }
+  
+  if ($mech->uri() =~ /facebook.com/) {
+    $winPb2->lblPbCurr->Text($STR{'scrollChat2P'}.'...');
+    my $maxScrollChatByDate = $winConfig->rbMaxScrollChatByDate->Checked();
+    my $maxDate;
+    my $maxScrollChat;
+    if ($maxScrollChatByDate) {
+      my ($d, $m, $y) = $winConfig->dtMaxScrollChatByDate->GetDate();
+      $maxDate        = timelocal(0,0,0,$d,$m-1,$y); # Store in Unixtime format
+    } else { $maxScrollChat = $winConfig->tfMaxScrollChat->Text(); }
+    
+    while (1) {
+      # Scroll again
+      if ($maxScrollChatByDate and $maxDate) { # Stop by date
+        my $lastDisplayedDate = ($mech->selector('abbr._35.timestamp'))[-1];
+        if ($lastDisplayedDate->{outerHTML} =~ /data-utime="([^\"]+)"/) {
+          my $date = $1;
+          my ($s,$min,$h,$d,$m,$y,$d_w,$ha,$isDST) = localtime($date);
+          my $dateOnly = timelocal(0,0,0,$d,$m,$y+1900);
+          if ($dateOnly >= $maxDate) { last; }
+        }
+      } elsif ($maxScrollChat and $count >= $maxScrollChat) { last; } # Stop by page
+      
+      my $loadNewerCode = $mech->selector('div._3hh', one => 1);
+      if ($loadNewerCode->{outerHTML} =~ /hidden_elem/) { last; }
+      else {
+        my $loadNewerLink = $mech->selector('a', any => 1, node => $loadNewerCode);
+        if ($loadNewerLink) {
+          $loadNewerLink->click();
+          sleep($CONFIG{'TIME_TO_WAIT'});
+        }
+        else { last; }
+      }
+    }
+    
+    $win->Tray->Change(-tip => $STR{'scrollChat2F'});
+    if (!$win->IsVisible()) {
+      $win->Tray->Change( -balloon_icon  => 'info'               ,
+                          -balloon_title => 'ExtractFace'        ,
+                          -balloon_tip   => $STR{'scrollChat2F'} , );
+      $win->Tray->ShowBalloon(1);
+    }
+  } else { Win32::GUI::MessageBox($winPb2, $STR{'warn4'}, $STR{'err1T'}, 0x40010); }
+  
+  # Turn off progress bar
+  $win->ChangeCursor($ARROW);
+  $winPb2->lblPbCurr->Text('');
+  $winPb2->lblCount->Text('');
+  &winPb2_Terminate;
+
+}  #--- End loadNewMsgThr
+
+#--------------------------#
+sub loadOldMsg
+#--------------------------#
+{
+  # Avoid new thread
+  if ($THR and $THR->is_running()) {
+    Win32::GUI::MessageBox($win, $STR{'warn1'},$STR{'warn1T'},0x40010);
+  } else {
+    # Start the thread
+    my $nbrRetries = 0;
+    my $count      = 0;
+    $THR = threads->create(\&loadOldMsgThr, $nbrRetries, $count);
+  }
+}  #--- End loadOldMsg
+
+#--------------------------#
+sub loadOldMsgThr
+#--------------------------#
+{
+  # Local variables
+  my ($nbrRetries, $count) = @_;
+  
+  # Cancel button
+  $SIG{'KILL'} = sub {
+    # Turn off progress bar
+    $winPb2->lblPbCurr->Text('');
+    $winPb2->lblCount->Text('');
+    &winPb2_Terminate;
+    $win->ChangeCursor($ARROW);
+    $win->Tray->Change(-tip => $STR{'scrollChat3C'});
+    threads->exit();
+  };
+  
+  # Deal with crash
+  $SIG{__DIE__} = sub {
+    my $msgErr = $_[0];
+    chomp($msgErr);
+    $msgErr =~ s/[\t\r\n]/ /g;
+    if ($winConfig->chDebugLogging->Checked()) { &debug($msgErr); }
+    if ($msgErr =~ /problem connecting/) {
+      Win32::GUI::MessageBox($win, $STR{'err1'}, $STR{'err1T'}, 0x40010);
+      # Turn off progress bar
+      $winPb2->lblPbCurr->Text('');
+      $winPb2->lblCount->Text('');
+      &winPb2_Terminate;
+      $win->ChangeCursor($ARROW);
+      $win->Tray->Change(-tip => 'ExtractFace');
+    } else {
+      # Retry 10 times
+      if ($msgErr !~ /NS_ERROR_FILE_IS_LOCKED/) { $nbrRetries++; }
+      if ($nbrRetries < $CONFIG{'NBR_RESUME'}) {
+        # Restart a new thread to continue
+        if ($msgErr !~ /NS_ERROR_FILE_IS_LOCKED/) { $winPb2->lblPbCurr->Text($STR{'crash'}.'...'); }
+        sleep(2);
+        $THR = threads->create(\&loadOldMsgThr, $nbrRetries, $count);
+      } else {
+        Win32::GUI::MessageBox($win, $STR{'err2'}, $STR{'err1T'}, 0x40010);
+      # Turn off progress bar
+      $winPb2->lblPbCurr->Text('');
+      $winPb2->lblCount->Text('');
+      &winPb2_Terminate;
+      $win->ChangeCursor($ARROW);
+      $win->Tray->Change(-tip => 'ExtractFace');
+      }
+    }
+    threads->exit();
+  };
+
+  # First execution
+  if (!$nbrRetries) {
+    $win->ChangeCursor($HOURGLASS);
+    $win->Tray->Change(-tip => $STR{'scrollChat3P'}.'...');
+    
+    # Turn on progress bar
+    $winPb2->Center();
+    $winPb2->Show();
+    $winPb2->lblPbCurr->Text('');
+    $winPb2->lblCount->Text('');
+    $win->Disable();
+  }
+  
+  my $mech;
+  eval { $mech = WWW::Mechanize::Firefox->new(tab => 'current'); };
+  if ($@) {
+    if ($@ =~ /Failed to connect to/) {
+      Win32::GUI::MessageBox($win, $STR{'err1'}, $STR{'err1T'}, 0x40010);
+    }
+    threads->exit();
+  }
+  
+  if ($mech->uri() =~ /facebook.com/) {
+    $winPb2->lblPbCurr->Text($STR{'scrollChat3P'}.'...');
+    my $maxScrollChatByDate = $winConfig->rbMaxScrollChatByDate->Checked();
+    my $maxDate;
+    my $maxScrollChat;
+    if ($maxScrollChatByDate) {
+      my ($d, $m, $y) = $winConfig->dtMaxScrollChatByDate->GetDate();
+      $maxDate        = timelocal(0,0,0,$d,$m-1,$y); # Store in Unixtime format
+    } else { $maxScrollChat = $winConfig->tfMaxScrollChat->Text(); }
+    
+    while (1) {
+      # Scroll again
+      if ($maxScrollChatByDate and $maxDate) { # Stop by date
+        my $section = ($mech->selector('ul.uiList._2ne._4kg'))[1];
+        my $firstDisplayedDate = ($mech->selector('abbr._35.timestamp', node => $section))[0];
+        if ($firstDisplayedDate->{outerHTML} =~ /data-utime="([^\"\.]+)/) {
+          my $date = $1;
+          my ($s,$min,$h,$d,$m,$y,$d_w,$ha,$isDST) = localtime($date);
+          my $dateOnly = timelocal(0,0,0,$d,$m,$y+1900);
+          if ($dateOnly <= $maxDate) { last; }
+        }
+      } elsif ($maxScrollChat and $count >= $maxScrollChat) { last; } # Stop by page
+      
+      my $loadOlderCode = ($mech->selector('div._3hg'))[1];
+      if ($loadOlderCode->{outerHTML} =~ /hidden_elem/) { last; }
+      else {
+        my $loadOlderLink = $mech->selector('a', any => 1, node => $loadOlderCode);
+        if ($loadOlderLink) {
+          $loadOlderLink->click();
+          sleep($CONFIG{'TIME_TO_WAIT'});
+        }
+        else { last; }
+      }
+    }
+    
+    $win->Tray->Change(-tip => $STR{'scrollChat3F'});
+    if (!$win->IsVisible()) {
+      $win->Tray->Change( -balloon_icon  => 'info'               ,
+                          -balloon_title => 'ExtractFace'        ,
+                          -balloon_tip   => $STR{'scrollChat3F'} , );
+      $win->Tray->ShowBalloon(1);
+    }
+  } else { Win32::GUI::MessageBox($winPb2, $STR{'warn4'}, $STR{'err1T'}, 0x40010); }
+  
+  # Turn off progress bar
+  $win->ChangeCursor($ARROW);
+  $winPb2->lblPbCurr->Text('');
+  $winPb2->lblCount->Text('');
+  &winPb2_Terminate;
+
+}  #--- End loadOldMsgThr
+
 #--------------------------#
 sub winChat
 #--------------------------#
 {
-  $THR = threads->create(sub {
-    # Deal with crash
-    $SIG{__DIE__} = sub {
-      my $msgErr = $_[0];
-      chomp($msgErr);
-      $msgErr =~ s/[\t\r\n]/ /g;
+  # Avoid new thread
+  if ($THR and $THR->is_running()) {
+    Win32::GUI::MessageBox($win, $STR{'warn1'},$STR{'warn1T'},0x40010);
+  } else {
+    # Start the thread
+    $THR = threads->create(\&winChatThr);
+    
+    usleep(500000);
+    $winChat->Center($win);
+    $winChat->DoModal();
+  }
+
+}  #--- End winChat
+
+#--------------------------#
+sub winChatThr
+#--------------------------#
+{
+  # Deal with crash
+  $SIG{__DIE__} = sub {
+    my $msgErr = $_[0];
+    chomp($msgErr);
+    $msgErr =~ s/[\t\r\n]/ /g;
+    if ($msgErr =~ /NS_ERROR_FILE_IS_LOCKED/) {
+      # Restart a new thread to continue
+      $THR = threads->create(\&winAlbumsThr);
+    } else {
       if ($winConfig->chDebugLogging->Checked()) { &debug($msgErr); }
       $win->ChangeCursor($ARROW);
       $win->Tray->Change(-tip => 'ExtractFace');
       Win32::GUI::MessageBox($winChat, $STR{'err3'}, $STR{'err1T'}, 0x40010);
-      threads->exit();
-    };
-    
-    my $mech;
-    eval { $mech = WWW::Mechanize::Firefox->new(tab => 'current'); };
-    if ($@) {
-      if ($@ =~ /Failed to connect to/) {
-        $winChat->btnChatOk->Disable();
-        Win32::GUI::MessageBox($winChat, $STR{'err1'}, $STR{'err1T'}, 0x40010);
-      }
-      threads->exit();
     }
+  };
+  
+  my $mech;
+  eval { $mech = WWW::Mechanize::Firefox->new(tab => 'current'); };
+  if ($@) {
+    if ($@ =~ /Failed to connect to/) {
+      $winChat->btnChatOk->Disable();
+      Win32::GUI::MessageBox($winChat, $STR{'err1'}, $STR{'err1T'}, 0x40010);
+    }
+    threads->exit();
+  }
 
+  if ($mech->uri() =~ /facebook.com/) {
     my $currURL  = $mech->uri();
-    if ($currURL =~ /https:\/\/www.facebook.com\/messages\/[^\/]+\/?/) {
-      my $title = $mech->title();
-      if ($title =~ /^\(\d+\) Messages/) {
-        my $headerNameCode = $mech->selector('h2._r7', any => 1);
-        if ($headerNameCode) {
-          if ($headerNameCode->{innerHTML} =~ /<span>([^\<]+)<span/) { # Non active profil
-            $title = $1;
-          } elsif ($headerNameCode->{innerHTML} =~ /<a[^\>]+>([^\<]+)<\/a>/) { # Non active profil
-            $title = $1;
-          }
-        }
-      }
-      if ($title) {
-        $title =~ s/[\<\>\:\"\/\\\|\?\*]/-/g;
-        my $decTitle = encode("iso-8859-1", $title);
-        $winChat->tfChatName->Text($decTitle);
-      }
+    if ($currURL =~ /https:\/\/www.facebook.com\/messages\/search\/([^\/\?]+)\/?/ or
+        $currURL =~ /https:\/\/www.facebook.com\/messages\/([^\/]+)\/?/) {
+      my $title = $1;
+      $title =~ s/[\#\<\>\:\"\/\\\|\?\*]/_/g;
+      $winChat->tfChatName->Text("$title - $STR{'chat'}");
       
       # Searched part only ?
       if (my $headerSearchCode = $mech->selector('div._2z9 div.mlm._2zc.fsm.fwn.fcg', any => 1)) {
@@ -4935,15 +5319,12 @@ sub winChat
       Win32::GUI::MessageBox($winChat, $STR{'warn3'}, $STR{'warn2T'}, 0x40010);
       threads->exit();
     }
-    
-    # Ready ?
-    &isDumpChatReady();
-  });
-  usleep(500000);
-  $winChat->Center($win);
-  $winChat->DoModal();
+  } else { Win32::GUI::MessageBox($winChat, $STR{'warn4'}, $STR{'err1T'}, 0x40010); }
+  
+  # Ready ?
+  &isDumpChatReady();
 
-}  #--- End winChat
+}  #--- End winChatThr
 
 #--------------------------#
 sub tfChatName_Change
@@ -5028,6 +5409,47 @@ sub chSaveChatDir_Click
 }  #--- End chSaveChatDir_Click
 
 #--------------------------#
+sub rbChatNormalMode_Click
+#--------------------------#
+{
+  $winChat->chDownloadImg->Enable();
+  $winChat->chDownloadVid->Enable();
+  $winChat->chDownloadVM->Enable();
+  $winChat->chDownloadAD->Enable();
+
+}  #--- End rbChatNormalMode_Click
+
+#--------------------------#
+sub rbChatSafeMode_Click
+#--------------------------#
+{
+  $winChat->chDownloadImg->Checked(0);
+  $winChat->chDownloadImgFull->Checked(0);
+  $winChat->chDownloadVid->Checked(0);
+  $winChat->chDownloadVM->Checked(0);
+  $winChat->chDownloadAD->Checked(0);
+  $winChat->chDownloadImg->Disable();
+  $winChat->chDownloadImgFull->Disable();
+  $winChat->chDownloadVid->Disable();
+  $winChat->chDownloadVM->Disable();
+  $winChat->chDownloadAD->Disable();
+
+}  #--- End rbChatSafeMode_Click
+
+#--------------------------#
+sub chDownloadImg_Click
+#--------------------------#
+{
+  if ($winChat->chDownloadImg->Checked()) {
+    $winChat->chDownloadImgFull->Enable();
+  } else {
+    $winChat->chDownloadImgFull->Checked(0);
+    $winChat->chDownloadImgFull->Disable();
+  }
+
+}  #--- End chDownloadImg_Click
+
+#--------------------------#
 sub chDownloadAD_Click
 #--------------------------#
 {
@@ -5039,6 +5461,24 @@ sub chDownloadAD_Click
   }
 
 }  #--- End chDownloadAD_Click
+
+#--------------------------#
+sub dtChatDatesRangeS_Change
+#--------------------------#
+{
+  $winChat->rbChatDatesAll->Checked(0);
+  $winChat->rbChatDatesRange->Checked(1);
+
+}  #--- End dtChatDatesRangeS_Change
+
+#--------------------------#
+sub dtChatDatesRangeE_Change
+#--------------------------#
+{
+  $winChat->rbChatDatesAll->Checked(0);
+  $winChat->rbChatDatesRange->Checked(1);
+
+}  #--- End dtChatDatesRangeE_Change
 
 #--------------------------#
 sub isDumpChatReady
@@ -5114,12 +5554,23 @@ sub dumpChat
   my $vmDir         = "$saveDir\\vm_$chatName";
   my $tmpDir        = "$saveDir\\temp";
   my $htmlPage      = "$tmpDir\\page.html";
+  my $safeMode      = $winChat->rbChatSafeMode->Checked();
   my $haveEmoticon  = 0;
   my $emoticonDL    = 0;
   my $cssSprite     = 0;
   my $spriteDL      = 0;
-  my @emoticons;
+  my %emoticons;
   my @stickers16;
+  
+  # Dates
+  my $dateS;
+  my $dateE;
+  if ($winChat->rbChatDatesRange->Checked()) {
+    my ($d1, $m1, $y1) = $winChat->dtChatDatesRangeS->GetDate();
+    $dateS             = timelocal(0,0,0,$d1,$m1-1,$y1);   # Store in Unixtime format
+    my ($d2, $m2, $y2) = $winChat->dtChatDatesRangeE->GetDate();
+    $dateE             = timelocal(0,0,0,$d2+1,$m2-1,$y2); # Store in Unixtime format
+  }  
 
   # Cancel button
   $SIG{'KILL'} = sub {
@@ -5189,8 +5640,17 @@ sub dumpChat
   if ($step == 1) {
     if (!-d $tmpDir) { mkdir($tmpDir); }
     if (!-d $imgDir) { mkdir($imgDir); }
-    my $status = $mech->save_content($htmlPage, $tmpDir);
-    while ($status->{currentState} != $status->{PERSIST_STATE_FINISHED}) { sleep(1); }
+    my $status;
+    # Safe mode, we save only html
+    if ($safeMode) {
+      $status = $mech->save_content($htmlPage);
+      sleep($CONFIG{'TIME_TO_WAIT'});
+    # Normal mode, we save html and all documents
+    } else {
+      $status = $mech->save_content($htmlPage, $tmpDir);
+      while ($status->{currentState} != $status->{PERSIST_STATE_FINISHED}) { sleep(1); }
+    }
+    
     $step = 2; # Page have been saved
   }
   
@@ -5204,21 +5664,48 @@ sub dumpChat
     # Parse each part
     my @parts;
     my $lastPartTxt;
-    if ($winChat->chSearched->Checked()) {
-      my $section = ($mech->selector('ul.uiList._2ne._4kg'))[1];
-      @parts = $mech->selector('li.webMessengerMessageGroup', node => $section);
+    
+    # Safe mode, we load content from file
+    if ($safeMode) {
+      if (open(my $fhTemp, "<:encoding(UTF-8)", $htmlPage)) {
+        my $file_as_string = do { local $/ = <$fhTemp> };
+        $file_as_string =~ s/[\r\n]//g;
+        if ($winChat->chSearched->Checked()) {
+          my $section = (split(/_2ne/, $file_as_string))[2];
+          undef($file_as_string);
+          @parts = split(/webMessengerMessageGroup/, $section);
+        } else {
+          my $section = (split(/_2ne/, $file_as_string))[1];
+          undef($file_as_string);
+          @parts     = split(/_8_/, $section);
+          my @parts2 = split(/webMessengerMessageGroup/, $section);
+          push(@parts, @parts2);
+          my $lastPart = ($mech->selector('div.uiScrollableAreaContent div.mbs'))[1];
+          if ($lastPart) { $lastPartTxt = $lastPart->{innerHTML}; }
+        }
+        close($fhTemp);
+      }
+    # Normal mode, we parse content with Firefox
     } else {
-      my $section  = ($mech->selector('ul.uiList._2ne._4kg'))[0];
-      push(@parts, $mech->selector('li._8_', node => $section));
-      push(@parts, $mech->selector('li.webMessengerMessageGroup', node => $section));
-      my $lastPart = ($mech->selector('div.uiScrollableAreaContent div.mbs'))[1];
-      if ($lastPart) { $lastPartTxt = $lastPart->{innerHTML}; }
+      if ($winChat->chSearched->Checked()) {
+        my $section = ($mech->selector('ul.uiList._2ne._4kg'))[1];
+        @parts = $mech->selector('li.webMessengerMessageGroup', node => $section);
+      } else {
+        my $section  = ($mech->selector('ul.uiList._2ne._4kg'))[0];
+        push(@parts, $mech->selector('li._8_', node => $section));
+        push(@parts, $mech->selector('li.webMessengerMessageGroup', node => $section));
+        my $lastPart = ($mech->selector('div.uiScrollableAreaContent div.mbs'))[1];
+        if ($lastPart) { $lastPartTxt = $lastPart->{innerHTML}; }
+      }
     }
+    
     my $nbrParts = scalar(@parts);
     foreach my $partCode (@parts) {
       if ($i >= $count) {
         $winPb2->lblCount->Text("$count/$nbrParts");
-        my $part = $partCode->{innerHTML};
+        my $part;
+        if ($safeMode) { $part = $partCode;              }
+        else           { $part = $partCode->{innerHTML}; }
         # Last messages, add last part
         if ($count == ($nbrParts-1) and $lastPartTxt) { $part .= $lastPartTxt; }
         
@@ -5235,7 +5722,7 @@ sub dumpChat
           if ($3) {
             $profileUrl  = $1;
             if ($3 =~ /\.jpg$/) {
-              $profileName   = encode('utf8',$2);
+              $profileName   = $2;
               $profileImgUrl = $3;
             } else {
               $profileName   = $3;
@@ -5244,409 +5731,414 @@ sub dumpChat
           } else {
             $profileUrl  = '-';
             if ($2 =~ /\.jpg$/) {
-              $profileName   = encode('utf8',$1);
+              $profileName   = $1;
               $profileImgUrl = $2;
             } else {
-              $profileName   = encode('utf8',$2);
+              $profileName   = $2;
               $profileImgUrl = $1;
             }
           }
-          if ($profileImgUrl =~ /\/([^\/\?]+)\?/) { $profileImg = encode('utf8', $1); }
+          if ($profileImgUrl =~ /\/([^\/\?]+)\?/) { $profileImg = $1; }
           my $dateUTime;
           my $isText;
           my $text;
           my $GPS_URL;
+          my $include = 1; # Indicates if message is in range, yes by default
           
           # Gather profil image if does not exist
-          if (-e "$tmpDir\\$profileImg" and !-e "$imgDir\\$profileImg") { rcopy("$tmpDir\\$profileImg", "$imgDir\\$profileImg"); }
+          if (!$safeMode and -e "$tmpDir\\$profileImg" and !-e "$imgDir\\$profileImg") {
+            rcopy("$tmpDir\\$profileImg", "$imgDir\\$profileImg");
+          }
           
           # Gather message date
           if ($part =~ /<abbr title="([^\"]+)" data-utime="([^\"]+)" class="_35 timestamp">/) {
             my $temp   = $1;
             $dateUTime = $2;
-  
-            # Gather GPS coordinates if available
-            if ($part =~ /data-hovercard="\/ajax\/messaging\/hovercard\/map\.php\?([^\"]+)/) {
-              my $donnees = $1;
-              if ($donnees =~ /longitude=([^\&\"]+)/) {
-                my $long = $1;
-                if ($donnees =~ /latitude=([^\&\"]+)/) {
-                  my $lat  = $1;
-                  $GPS_URL = "http://maps.google.com/maps?q=$lat,$long";
-                }
-              }
+            
+            # Include this message ?
+            if ($dateS or $dateE) {
+              if ($dateS and int($dateUTime) <  $dateS) { $include = 0; } # Out of range
+              if ($dateE and int($dateUTime) >= $dateE) { last;         } # Out of range
             }
             
-            # Gather text, images and links
-            my @paragraphs = split(/_38 direction_ltr/, $part);
-            foreach my $par (@paragraphs) {
-              $par =~ s/\n//g;
-              # Searched part only, delete irrelevant text
-              if ($par =~ /clearfix mbs uiMorePager stat_elem _3hh _52jv/) {
-                $par  = (split(/clearfix mbs uiMorePager stat_elem _3hh _52jv/, $par ))[0];
-                $part = (split(/clearfix mbs uiMorePager stat_elem _3hh _52jv/, $part))[0];
-              }
+            if ($include) {
               
-              if ($par =~ /"><span class="null"><p>(.+)<\/p>/) {
-                $isText = 1;
-                my $extract = $1;
-                # Text
-                $extract = encode('utf8', $extract);
-                $text .= $extract;
-                $text =~ s/</ </g; # add spaces
-                
-                # Emoticons
-                # Ex. : <span class="emoticon_text">émoticône heart</span><span class="emoticon emoticon_heart" title="<3"></span>
-                if ($extract =~ /<span class=\"emoticon emoticon[^\"]+\" title=\"/) {
-                  while ($extract =~ /<span class=\"emoticon (emoticon[^\"]+)\" title=\"/) {
-                    my $emoticonTag = $1;
-                    my $imgURL = 'https://www.facebook.com/rsrc.php/v2/yx/r/pimRBh7B6ER.png';
-                    $haveEmoticon = 1;
-                    # Download the image
-                    if ($winChat->chDownloadAD->Checked() and !$emoticonDL) {
-                      $mech->save_url($imgURL, "$imgDir\\pimRBh7B6ER.png");
-                      $emoticonDL = 1;
-                    }
-                    my $emoCode = &emoticon($emoticonTag);
-                    if ($emoCode) { push(@emoticons, $emoCode); }
-                    
-                    # Truncate text
-                    $extract = &truncateText($extract, length($emoticonTag), $emoticonTag);
-                    
-                    # Replace in $text
-                    if ($winChat->chDownloadAD->Checked()) {
-                      $text =~ s/<span class=\"[^\"]+\">[^\<]+<\/span> ?<span class=\"emoticon [^\"]+\" title=\"[^\"]+\"> ?<\/span>/<span class=\"emoticon\"><span class=\"$emoticonTag\"><\/span><\/span>/;
-                    } else {
-                      $text =~ s/<span[^\>]+>[^\<]+<\/span> ?<span class="emoticon[^\"]+" title="([^\"]+)"> ?<\/span>/<span style="background-color: #FFFF00">$1<\/span>/g;
-                    }
+              # Gather GPS coordinates if available
+              if ($part =~ /data-hovercard="\/ajax\/messaging\/hovercard\/map\.php\?([^\"]+)/) {
+                my $donnees = $1;
+                if ($donnees =~ /longitude=([^\&\"]+)/) {
+                  my $long = $1;
+                  if ($donnees =~ /latitude=([^\&\"]+)/) {
+                    my $lat  = $1;
+                    $GPS_URL = "http://maps.google.com/maps?q=$lat,$long";
                   }
                 }
-                
-                # CSS Sprite
-                # Ex. : <span class="_1az _1a- _2fd"></span>
-                if ($extract =~ /<span class=\"_1az _1a- [^\"]+\"> ?<\/span>/) {
-                  while ($extract =~ /<span class=\"_1az _1a- ([^\"]+)\"> ?<\/span>/) {
-                    my $spriteID = $1;
-                    my $imgURL = 'https://www.facebook.com/rsrc.php/v2/yp/r/aeO1ik7i7-T.png';
-                    $cssSprite = 1;
-                    # Download the image
-                    if ($winChat->chDownloadAD->Checked() and !$spriteDL) {
-                      $mech->save_url($imgURL, "$imgDir\\aeO1ik7i7-T.png");
-                      $spriteDL = 1;
-                    }
-                    my $sticker = &cssSpriteBD($spriteID);
-                    if ($sticker) { push(@stickers16, $sticker); }
-                    
-                    # Truncate text
-                    $extract = &truncateText($extract, length($spriteID), $spriteID);
-                    
-                    # Replace in $text
-                    $text =~ s/<span class=\"_1az _1a- $spriteID\"> ?<\/span>/<span class=\"sticker16\"><span class=\"$spriteID\"><\/span><\/span>/;
-                  }
-                }
-  
-                $text .= '<br>';
-                
-                
-              # Gather warnings
-              } elsif ($par =~ /<div class="[^\"]*uiBoxYellow[^\"]*"[^\>]*>([^\<]+)<\/div>/) {
-                $isText = 1;
-                my $warning = $1;
-                $warning = encode('utf8', $warning);
-                $text .= "<font color=\"#FFCC66\">$1</font><br>";
               }
               
-              # Shared link
-              if ($par =~ /<a href="([^\"]+)" target="_blank" class="_5rw4"[^\>]*>/) {
-                my $sharedLinkUrl = $1;
-                if ($sharedLinkUrl !~ /^http/) { $sharedLinkUrl = "https://www.facebook.com$sharedLinkUrl"; }
-                my $sharedLinkTxt;
-                if ($par =~ /<div class="[^\"]*__6k[^\"]*"[^\>]*>([^\<]+)<\/div>/) { # See also <div class="[^\"]*__6m[^\"]*">([^\<]+)<\/div>
-                  $sharedLinkTxt = $1;
-                } elsif ($par =~ /<div class="[^\"]*__6l[^\"]*"[^\>]*>([^\<]+)<\/div>/) {
-                  $sharedLinkTxt = $1;
+              # Gather text, images and links
+              my @paragraphs = split(/_38 direction_ltr/, $part);
+              foreach my $par (@paragraphs) {
+                $par =~ s/\n//g;
+                # Searched part only, delete irrelevant text
+                if ($par =~ /clearfix mbs uiMorePager stat_elem _3hh _52jv/) {
+                  $par  = (split(/clearfix mbs uiMorePager stat_elem _3hh _52jv/, $par ))[0];
+                  $part = (split(/clearfix mbs uiMorePager stat_elem _3hh _52jv/, $part))[0];
                 }
-                if ($sharedLinkUrl and $sharedLinkTxt) {
+                
+                if ($par =~ /"><span class="null"><p>(.+)<\/p>/) {
                   $isText = 1;
-                  $sharedLinkTxt = encode('utf8', $sharedLinkTxt);
-                  $text .= "<font color=\"#8B2323\">$STR{'sharedLink'}: <a href=\"$sharedLinkUrl\" target=\"_blank\">$sharedLinkTxt</a></font><br>";
+                  my $extract = $1;
+                  # Text
+                  $text .= $extract;
+                  $text =~ s/</ </g; # add spaces
+                  
+                  # Emoticons
+                  if ($extract =~ / class=\"emoticon emoticon[^\"]+\"/) {
+                    while ($extract =~ / class=\"emoticon (emoticon[^\"]+)\"/) {
+                      my $emoticonTag = $1;
+                      my $imgURL = 'https://www.facebook.com/rsrc.php/v2/yx/r/pimRBh7B6ER.png';
+                      $haveEmoticon = 1;
+                      # Download the image
+                      if (!$emoticonDL) {
+                        $mech->save_url($imgURL, "$imgDir\\pimRBh7B6ER.png");
+                        $emoticonDL = 1;
+                      }
+                      my $emoCode = &emoticon($emoticonTag);
+                      if ($emoCode and !exists($emoticons{$emoCode})) { $emoticons{$emoCode} = 1; }
+                      
+                      # Truncate text
+                      $extract = &truncateText($extract, length($emoticonTag), $emoticonTag);
+                      
+                      # Replace in $text
+                      $text =~ s/<span[^\>]+>[^\<]*<span[^\<]+class=\"emoticon [^\"]+\"[^\<]*> ?<\/span> ?<span[^\>]+>[^\<]*<\/span> ?<\/span>/<span class=\"emoticon\"><span class=\"$emoticonTag\"><\/span><\/span>/;
+                    }
+                  }
+                  
+                  # CSS Sprite
+                  # Ex. : <span class="_1az _1a- _2fd"></span>
+                  if ($extract =~ /<span class=\"_1az _1a- [^\"]+\"> ?<\/span>/) {
+                    while ($extract =~ /<span class=\"_1az _1a- ([^\"]+)\"> ?<\/span>/) {
+                      my $spriteID = $1;
+                      my $imgURL = 'https://www.facebook.com/rsrc.php/v2/yp/r/aeO1ik7i7-T.png';
+                      $cssSprite = 1;
+                      # Download the image
+                      if (!$spriteDL) {
+                        $mech->save_url($imgURL, "$imgDir\\aeO1ik7i7-T.png");
+                        $spriteDL = 1;
+                      }
+                      my $sticker = &cssSpriteBD($spriteID);
+                      if ($sticker) { push(@stickers16, $sticker); }
+                      
+                      # Truncate text
+                      $extract = &truncateText($extract, length($spriteID), $spriteID);
+                      
+                      # Replace in $text
+                      $text =~ s/<span class=\"_1az _1a- $spriteID\"> ?<\/span>/<span class=\"sticker16\"><span class=\"$spriteID\"><\/span><\/span>/;
+                    }
+                  }
+    
+                  $text .= '<br>';
+                  
+                  
+                # Gather warnings
+                } elsif ($par =~ /<div class="[^\"]*uiBoxYellow[^\"]*"[^\>]*>([^\<]+)<\/div>/) {
+                  $isText = 1;
+                  my $warning = $1;
+                  $text .= "<font color=\"#FFCC66\">$1</font><br>";
+                }
+                
+                # Shared link
+                if ($par =~ /<a href="([^\"]+)" target="_blank" class="_5rw4"[^\>]*>/) {
+                  my $sharedLinkUrl = $1;
+                  if ($sharedLinkUrl !~ /^http/) { $sharedLinkUrl = "https://www.facebook.com$sharedLinkUrl"; }
+                  my $sharedLinkTxt;
+                  if ($par =~ /<div class="[^\"]*__6k[^\"]*"[^\>]*>([^\<]+)<\/div>/) { # See also <div class="[^\"]*__6m[^\"]*">([^\<]+)<\/div>
+                    $sharedLinkTxt = $1;
+                  } elsif ($par =~ /<div class="[^\"]*__6l[^\"]*"[^\>]*>([^\<]+)<\/div>/) {
+                    $sharedLinkTxt = $1;
+                  }
+                  if ($sharedLinkUrl and $sharedLinkTxt) {
+                    $isText = 1;
+                    $text .= "<font color=\"#8B2323\">$STR{'sharedLink'}: <a href=\"$sharedLinkUrl\" target=\"_blank\">$sharedLinkTxt</a></font><br>";
+                  }
                 }
               }
             }
             
-            # Gather notifications (related to call)
-            if ($part =~ /<div class="[^\"]*_55s[^\"]*"[^\>]*>([^\<]+)<\/div>/) {
-              while ($part =~ /<div class="[^\"]*_55s[^\"]*"[^\>]*>([^\<]+)<\/div>/) {
-                $isText = 1;
-                my $notifTxt = $1;
-                $notifTxt = encode('utf8', $notifTxt);
-                $text .= "<span style=\"font-size: 14px; color: #6E7B8B;\">$notifTxt</span><br>";
-                
-                # Truncate text
-                $part =~ s/<div class="[^\"]*_55s[^\"]*"[^\>]*>([^\<]+)<\/div>//;
-              }
-            }
+            if ($include) {
             
-            # Gather normal image
-            if    ($part =~ /a class="_ksh"/ and $part =~ /href="[^\"]+" role="img"/ and $part =~ /<img alt="" src="([^\"]+)">/) {
-              my $imgName = $1;
-              rcopy("$tmpDir\\$imgName", "$imgDir\\$imgName"); # Copy file
-              $text = "<img src=\"images_$chatName\\$imgName\" border=0>";
+              # Gather notifications (related to call)
+              if ($part =~ /<div class="[^\"]*_55s[^\"]*"[^\>]*>([^\<]+)<\/div>/) {
+                while ($part =~ /<div class="[^\"]*_55s[^\"]*"[^\>]*>([^\<]+)<\/div>/) {
+                  $isText = 1;
+                  my $notifTxt = $1;
+                  $text .= "<span style=\"font-size: 14px; color: #6E7B8B;\">$notifTxt</span><br>";
+                  
+                  # Truncate text
+                  $part =~ s/<div class="[^\"]*_55s[^\"]*"[^\>]*>([^\<]+)<\/div>//;
+                }
+              }
               
-              # Truncate text
-              $part = &truncateText($part, length($imgName), $imgName);
-            }
-            
-            # Special image (_55pj)
-            elsif ($part =~ /class="_ksh _55pj"/ and $part =~ /style="background-image: ?url\((?:&quot;)?[^\)]+\)/) {
-              while ($part =~ /class="_ksh _55pj"/ and $part =~ /style="background-image: ?url\((?:&quot;)?([^\)]+)\)/) {
-                my $imgURL = my $origImgURL = $1;
-                $imgURL =~ s/&amp;/&/g;
-                my $urlImg;
-                if ($imgURL !~ /^http/) { $urlImg = "https://www.facebook.com$imgURL"; }
-                else                    { $urlImg = $imgURL;                           }
-                if ($winChat->chDownloadAD->Checked()) {
-                  my $imgFileName;
-                  if ($imgURL =~ /\/([^\/\?]+)\?/) { $imgFileName = $1; }
-                  $mech->save_url($urlImg, "$imgDir\\$imgFileName");
-                  $text .= "<img src=\"images_$chatName\\$imgFileName\" border=0><br><br>";
-                } else {
-                  $text .= "<img src=\"$urlImg\" border=0><br><br>";
-                }
-                
-                # Truncate text
-                $part = &truncateText($part, length($origImgURL), $origImgURL);
-              }
-            }
-            
-            # Special image (_55pk)
-            elsif ($part =~ /class=" ?_55pk/ and $part =~ /style="background-image: ?url\([^\)]+\)/) {
-              while ($part =~ /div class="_332l" style="background-image: ?url\([^\)]+\)|div style="background-image: ?url\([^\)]+\)[^\>]+class="_332l"/ or
-                     $part =~ /div class="_4yp9" style="background-image: ?url\([^\)]+\)|div style="background-image: ?url\([^\)]+\)[^\>]+class="_4yp9"/) {
-                # We keep the first
-                my $origImgURL;
-                if ($part =~ /(div class="_332l" style="background-image: ?url\([^\)]+\))/ or
-                    $part =~ /(div style="background-image: ?url\([^\)]+\)[^\>]+class="_332l")/) {
-                  my $el1 = $1;
-                  my $posEl1 = index($part, $el1);
-                  if ($part =~ /(div class="_4yp9" style="background-image: ?url\([^\)]+\))/ or
-                      $part =~ /(div style="background-image: ?url\([^\)]+\)[^\>]+class="_4yp9")/) {
-                    my $el2 = $1;
-                    my $posEl2 = index($part, $el2);
-                    if ($posEl2 > $posEl1) { $origImgURL = $el1; }
-                    else                   { $origImgURL = $el2; }
-                  } else { $origImgURL = $el1; }
-                } elsif ($part =~ /(div class="_4yp9" style="background-image: ?url\([^\)]+\))/ or
-                         $part =~ /(div style="background-image: ?url\([^\)]+\)[^\>]+class="_4yp9")/) {
-                  $origImgURL = $1;
-                }
-                my $imgURL;
-                if ($origImgURL =~ /style="background-image: ?url\((?:&quot;)?([^\)]+)\)/) { $imgURL = $1; }
-                if ($origImgURL and $imgURL) {
+              ## Gather normal image
+              #if    (!$winChat->chChatSafeMode->Checked() and $part =~ /a class="_ksh"/ and
+              #       $part =~ /href="[^\"]+" role="img"/ and $part =~ /<img alt="" src="([^\"]+)">/) {
+              #  my $imgName = $1;
+              #  rcopy("$tmpDir\\$imgName", "$imgDir\\$imgName"); # Copy file
+              #  $text = "<img src=\"images_$chatName\\$imgName\" border=0>";
+              #  
+              #  # Truncate text
+              #  $part = &truncateText($part, length($imgName), $imgName);
+              #}
+              
+              # Special image (_55pj)
+              if ($part =~ /class="_ksh _55pj"/ and $part =~ /style="background-image: ?url\((?:&quot;)?[^\)]+\)/) {
+                while ($part =~ /class="_ksh _55pj"/ and $part =~ /style="background-image: ?url\((?:&quot;)?([^\)]+)\)/) {
+                  my $imgURL = my $origImgURL = $1;
                   $imgURL =~ s/&amp;/&/g;
-                  $imgURL =~ s/&quot;//g;
                   my $urlImg;
                   if ($imgURL !~ /^http/) { $urlImg = "https://www.facebook.com$imgURL"; }
                   else                    { $urlImg = $imgURL;                           }
-                  if ($winChat->chDownloadAD->Checked()) {
+                  if ($winChat->chDownloadImg->Checked()) {
                     my $imgFileName;
                     if ($imgURL =~ /\/([^\/\?]+)\?/) { $imgFileName = $1; }
                     $mech->save_url($urlImg, "$imgDir\\$imgFileName");
-                    my $chatNameEnc = encode('utf8', $chatName);
-                    
-                    # Download image in full size
-                    if ($winChat->chDownloadImg->Checked()) {
-                      # Open popup image
-                      my @links = $mech->selector('div._55pk a');
-                      for my $link (@links) {
-                        my $linkData = $link->{innerHTML};
-                        if ($linkData =~ /class="_4yp6/ and $linkData =~ /$imgFileName/) {
-                          my $width;
-                          my $height;
-                          if ($linkData =~ /width: ?(\d+)px/ ) { $width  = $1; }
-                          if ($linkData =~ /height: ?(\d+)px/) { $height = $1; }                            
-                          # Open popup
-                          $link->click;
-                          sleep($CONFIG{'TIME_TO_WAIT'});
-                          # Download the image in full size
-                          my @bigImgLinks = $mech->selector('img._4-od');
-                          foreach (@bigImgLinks) {
-                            my $linkBigImg = $_->{src};
-                            if ($linkBigImg =~ /\/([^\/\?]+)\?/) {
-                              my $nameBigImg = $1;
-                              $mech->save_url($linkBigImg, "$imgDir\\$nameBigImg");
-                              if ($width and $height) {
-                                $text .= "<img src=\"images_$chatNameEnc\\$imgFileName\" width=$width height=$height border=0><br>";
-                              } else { $text .= "<img src=\"images_$chatNameEnc\\$imgFileName\" border=0><br>"; }
-                              $text .= "<span style=\"font-size: 14px;\"><a href=\"images_$chatName\\$nameBigImg\" target=\"_blank\">$STR{'zoomImg'}</a></span><br>";
-                            }
-                          }
-  
-                          # Close popup
-                          $mech->eval_in_page("var el = document.getElementsByClassName('_4-o9 _50-m _51an _5wx4'); for (var i=0;i<el.length; i++) { el[i].click(); }");
-                        }
-                      }
-                    } else {
-                      $text .= "<img src=\"images_$chatNameEnc\\$imgFileName\" border=0><br>";
-                    }
-                    $text .= "<br>";
+                    $text .= "<img src=\"images_$chatName\\$imgFileName\" border=0><br><br>";
                   } else {
                     $text .= "<img src=\"$urlImg\" border=0><br><br>";
                   }
                   
                   # Truncate text
                   $part = &truncateText($part, length($origImgURL), $origImgURL);
-                } else { last; }
+                }
               }
-            }
-            
-            # Gather stickerContainer type image and animated Facebook images
-            elsif ($part =~ /class="mvs/ and ($part =~ /style="background-image: ?url\((?:&quot;)?(\/stickers\/asset\/\?sticker_id[^\&]+)/ or
-                                              $part =~ /style="background-image: ?url\(&quot;([^\&]+)&quot;\); background-size/)) {
-              my $imgURL = $1;
-              if ($imgURL !~ /^http/) { $imgURL = "https://www.facebook.com$imgURL"; }
-              # Sticker use redirection
-              if (($imgURL =~ /sticker_id=/)) {
-                my $mechSticker = WWW::Mechanize::Firefox->new(autodie => 0);
-                $mechSticker->get($imgURL, synchronize => 0);
-                sleep($CONFIG{'TIME_TO_WAIT'});
-                $imgURL = $mechSticker->uri;
-              }
-              # Download the image ?
-              if ($winChat->chDownloadAD->Checked()) {
-                my $imgName = $dateUTime;
-                if ($imgURL =~ /\/([^\/]+)$/) { $imgName = $1; }
-                $mech->save_url($imgURL, "$imgDir\\$imgName");
-                $text .= "<img src=\"images_$chatName\\$imgName\" border=0><br>";
-              } else { $text .= "<img src=\"$imgURL\" border=0><br>"; }
               
-              # Truncate text
-              $part = &truncateText($part, length($imgURL), $imgURL);
-            }
-            
-            # Special sticker (this one cannot be displayed if not dowloaded)
-            elsif ($part =~ /class="mvs _576q[^\>]+style=\"[^\"]+\"/ or
-                   $part =~ /style=\"[^\"]+\"[^\>]+class="mvs _576q[^\>]+/) {
-              my $imgURL = 'https://www.facebook.com/rsrc.php/ya/r/FwHVs2eE5cr.svg';
-              # Download the image ?
-              $mech->save_url($imgURL, "$imgDir\\FwHVs2eE5cr.svg");
-              my $chatNameEnc = encode('utf8', $chatName);
-              $text .= "<img src=\"images_$chatNameEnc\\FwHVs2eE5cr.svg\" width=35 height=35 border=0>";
-              
-              # Truncate text
-              $part = &truncateText($part, length($imgURL), $imgURL);
-            }
-            
-            # Gather video
-            elsif ($part =~ /a[^\>]+rel="theater"[^\>]+href="([^\"]+)"/ or $part =~ /a[^\>]+href="([^\"]+)"[^\>]+rel="theater"[^\>]*/) { # Link to the page with the video
-              my $urlVideoPage = unescape($1);
-              $urlVideoPage =~ s/&amp;/&/g;
-              if ($winChat->chDownloadAD->Checked()) { # Download image and video ?
-                if ($part =~ /div[^\>]+class="clearfix _23n-"[^\>]*><img[^\>]+src="([^\"]+)"/) { # Image of the video
-                  my $videoImgName = $1;
-                  if ($videoImgName =~ /https:\/\/(?:[^\/]+\/)+([^\/\?]+)\?/) { $videoImgName = $1; }
-                  # Gather page with the video
-                  my $mechVideo = WWW::Mechanize::Firefox->new(autodie => 0);
-                  $mechVideo->get($urlVideoPage, synchronize => 0);
-                  sleep($CONFIG{'TIME_TO_WAIT'});
-                  my $title = $mechVideo->title();
-                  $title = decode('UTF-8', $title);
-                  if ($title =~ /([^ ]+) \(/) { $title = $1; }  # Title of the page
-                  my $status2 = $mechVideo->save_content("$tmpDir\\videoPage.html", $tmpDir);
-                  while ($status2->{currentState} != $status2->{PERSIST_STATE_FINISHED}) { usleep(100000); }
-                  # Parse the video page
-                  open(my $tmpVid, "$tmpDir\\videoPage.html");
-                  my $vidfile_as_string = do { local $/ = <$tmpVid> };
-                  $vidfile_as_string =~ s/[\r\n]//g;
-                  if ($vidfile_as_string =~ /video[^\>]+src="([^\"]+)"/) {
-                    my $videoName = $1;
-                    if ($videoName =~ /https:\/\/(?:[^\/]+\/)+([^\/\?]+)\?/) { $videoName = $1; }
-                    if (!-d $vidDir) { mkdir($vidDir); }
-                    rcopy("$tmpDir\\$videoName", "$vidDir\\$videoName"); # Copy video file
-                    rcopy("$tmpDir\\$videoImgName", "$imgDir\\$videoImgName"); # Copy video image file
-                    # Create message
-                    $text .= "<font color=\"#8B2323\">$STR{'video'}: </font><br>";
-                    $text .= "<a href=\"videos_$chatName\\$videoName\" target=\"_blank\"><img src=\"images_$chatName\\$videoImgName\" border=0></a></span><br>";
+              # Special image (_55pk)
+              elsif ($part =~ /class=" ?_55pk/ and $part =~ /style="background-image: ?url\([^\)]+\)/) {
+                while ($part =~ /div class="_332l" style="background-image: ?url\([^\)]+\)|div style="background-image: ?url\([^\)]+\)[^\>]+class="_332l"/ or
+                       $part =~ /div class="_4yp9" style="background-image: ?url\([^\)]+\)|div style="background-image: ?url\([^\)]+\)[^\>]+class="_4yp9"/) {
+                  # We keep the first
+                  my $origImgURL;
+                  if ($part =~ /(div class="_332l" style="background-image: ?url\([^\)]+\))/ or
+                      $part =~ /(div style="background-image: ?url\([^\)]+\)[^\>]+class="_332l")/) {
+                    my $el1 = $1;
+                    my $posEl1 = index($part, $el1);
+                    if ($part =~ /(div class="_4yp9" style="background-image: ?url\([^\)]+\))/ or
+                        $part =~ /(div style="background-image: ?url\([^\)]+\)[^\>]+class="_4yp9")/) {
+                      my $el2 = $1;
+                      my $posEl2 = index($part, $el2);
+                      if ($posEl2 > $posEl1) { $origImgURL = $el1; }
+                      else                   { $origImgURL = $el2; }
+                    } else { $origImgURL = $el1; }
+                  } elsif ($part =~ /(div class="_4yp9" style="background-image: ?url\([^\)]+\))/ or
+                           $part =~ /(div style="background-image: ?url\([^\)]+\)[^\>]+class="_4yp9")/) {
+                    $origImgURL = $1;
                   }
-                  undef($vidfile_as_string);
-                  close($tmpVid);
-                # No image, print url only
+                  my $imgURL;
+                  if ($origImgURL =~ /style="background-image: ?url\((?:&quot;)?([^\)]+)\)/) { $imgURL = $1; }
+                  if ($origImgURL and $imgURL) {
+                    $imgURL =~ s/&amp;/&/g;
+                    $imgURL =~ s/&quot;//g;
+                    my $urlImg;
+                    if ($imgURL !~ /^http/) { $urlImg = "https://www.facebook.com$imgURL"; }
+                    else                    { $urlImg = $imgURL;                           }
+                    if ($winChat->chDownloadImg->Checked()) {
+                      my $imgFileName;
+                      if ($imgURL =~ /\/([^\/\?]+)\?/) { $imgFileName = $1; }
+                      $mech->save_url($urlImg, "$imgDir\\$imgFileName");
+                      
+                      # Download image in full size
+                      if ($winChat->chDownloadImgFull->Checked()) {
+                        # Open popup image
+                        my @links = $mech->selector('div._55pk a');
+                        for my $link (@links) {
+                          my $linkData = $link->{innerHTML};
+                          if ($linkData =~ /class="_4yp6/ and $linkData =~ /$imgFileName/) {
+                            my $width;
+                            my $height;
+                            if ($linkData =~ /width: ?(\d+)px/ ) { $width  = $1; }
+                            if ($linkData =~ /height: ?(\d+)px/) { $height = $1; }                            
+                            # Open popup
+                            $link->click;
+                            sleep($CONFIG{'TIME_TO_WAIT'});
+                            # Download the image in full size
+                            my @bigImgLinks = $mech->selector('img._4-od');
+                            foreach (@bigImgLinks) {
+                              my $linkBigImg = $_->{src};
+                              if ($linkBigImg =~ /\/([^\/\?]+)\?/) {
+                                my $nameBigImg = $1;
+                                $mech->save_url($linkBigImg, "$imgDir\\$nameBigImg");
+                                if ($width and $height) {
+                                  $text .= "<img src=\"images_$chatName\\$imgFileName\" width=$width height=$height border=0><br>";
+                                } else { $text .= "<img src=\"images_$chatName\\$imgFileName\" border=0><br>"; }
+                                $text .= "<span style=\"font-size: 14px;\"><a href=\"images_$chatName\\$nameBigImg\" target=\"_blank\">$STR{'zoomImg'}</a></span><br>";
+                              }
+                            }
+    
+                            # Close popup
+                            $mech->eval_in_page("var el = document.getElementsByClassName('_4-o9 _50-m _51an _5wx4'); for (var i=0;i<el.length; i++) { el[i].click(); }");
+                          }
+                        }
+                      } else {
+                        $text .= "<img src=\"images_$chatName\\$imgFileName\" border=0><br>";
+                      }
+                      $text .= "<br>";
+                    } else {
+                      $text .= "<img src=\"$urlImg\" border=0><br><br>";
+                    }
+                    
+                    # Truncate text
+                    $part = &truncateText($part, length($origImgURL), $origImgURL);
+                  } else { last; }
+                }
+              }
+              
+              # Gather stickerContainer type image and animated Facebook images
+              elsif ($part =~ /class="mvs/ and ($part =~ /style="background-image: ?url\((?:&quot;)?(\/stickers\/asset\/\?sticker_id[^\&]+)/ or
+                                                $part =~ /style="background-image: ?url\(&quot;([^\&]+)&quot;\); background-size/)) {
+                my $imgURL = $1;
+                if ($imgURL !~ /^http/) { $imgURL = "https://www.facebook.com$imgURL"; }
+                # Sticker use redirection
+                if (($imgURL =~ /sticker_id=/)) {
+                  my $mechSticker = WWW::Mechanize::Firefox->new(autodie => 0);
+                  $mechSticker->get($imgURL, synchronize => 0);
+                  sleep($CONFIG{'TIME_TO_WAIT'});
+                  $imgURL = $mechSticker->uri;
+                }
+                # Download the image ?
+                if (!$safeMode) {
+                  my $imgName = $dateUTime;
+                  if ($imgURL =~ /\/([^\/]+)$/) { $imgName = $1; }
+                  $mech->save_url($imgURL, "$imgDir\\$imgName");
+                  $text .= "<img src=\"images_$chatName\\$imgName\" border=0><br>";
+                } else { $text .= "<img src=\"$imgURL\" border=0><br>"; }
+                
+                # Truncate text
+                $part = &truncateText($part, length($imgURL), $imgURL);
+              }
+              
+              # Special sticker (this one cannot be displayed if not dowloaded)
+              elsif ($part =~ /class="mvs _576q[^\>]+style=\"[^\"]+\"/ or
+                     $part =~ /style=\"[^\"]+\"[^\>]+class="mvs _576q[^\>]+/) {
+                my $imgURL = 'https://www.facebook.com/rsrc.php/ya/r/FwHVs2eE5cr.svg';
+                # Download the image ?
+                $mech->save_url($imgURL, "$imgDir\\FwHVs2eE5cr.svg");
+                $text .= "<img src=\"images_$chatName\\FwHVs2eE5cr.svg\" width=35 height=35 border=0>";
+                
+                # Truncate text
+                $part = &truncateText($part, length($imgURL), $imgURL);
+              }
+              
+              # Gather video
+              elsif ($part =~ /a[^\>]+rel="theater"[^\>]+href="([^\"]+)"/ or $part =~ /a[^\>]+href="([^\"]+)"[^\>]+rel="theater"[^\>]*/) { # Link to the page with the video
+                my $urlVideoPage = unescape($1);
+                $urlVideoPage =~ s/&amp;/&/g;
+                if ($winChat->chDownloadVid->Checked()) { # Download image and video ?
+                  if ($part =~ /div[^\>]+class="clearfix _23n-"[^\>]*><img[^\>]+src="([^\"]+)"/) { # Image of the video
+                    my $videoImgUrl = $1;
+                    $videoImgUrl =~ s/&amp;/&/g;
+                    my $videoImgName;
+                    if ($videoImgUrl =~ /https:\/\/(?:[^\/]+\/)+([^\/\?]+)\?/) { $videoImgName = $1; }
+                    # Gather page with the video
+                    my $mechVideo = WWW::Mechanize::Firefox->new(autodie => 0);
+                    $mechVideo->get($urlVideoPage, synchronize => 0);
+                    sleep($CONFIG{'TIME_TO_WAIT'}+1);
+                    if (my $videoURL = $mechVideo->selector('video', one => 1)->{src}) {
+                      my $videoName;
+                      if ($videoURL =~ /https:\/\/(?:[^\/]+\/)+([^\/\?]+)\?/) { $videoName = $1; }
+                      if (!-d $vidDir) { mkdir($vidDir); }
+                      $winPb2->lblPbCurr->Text("$STR{'downloading'}: $videoURL");
+                      $mechVideo->save_url($videoURL, "$vidDir\\$videoName"); # Download video
+                      if ($videoImgUrl and $videoImgName and $mechVideo->save_url($videoImgUrl, "$imgDir\\$videoImgName")) { # Download image of the video
+                        # Create message
+                        $text .= "<font color=\"#8B2323\">$STR{'video'}: </font><br>";
+                        $text .= "<a href=\"videos_$chatName\\$videoName\" target=\"_blank\"><img src=\"images_$chatName\\$videoImgName\" border=0></a></span><br>";
+                      # No image, but video downloaded
+                      } else {
+                        $text .= "<font color=\"#8B2323\">$STR{'video'}: </font><br>";
+                        $text .= "<a href=\"videos_$chatName\\$videoName\" target=\"_blank\">$STR{'videoURL'}</a></span><br>";
+                      }
+                      $winPb2->lblPbCurr->Text($STR{'dumpChatP'}.'...');
+                    # Link to video not found
+                    } else {
+                      $isText = 1;
+                      $text .= "$STR{'videoErr'}:<br><span style=\"font-size: 14px;\"><a href=\"$urlVideoPage\" target=\"_blank\">$STR{'videoURL'}</a></span><br>";
+                    }
+                  # No image, print url only
+                  } else {
+                    $isText = 1;
+                    $text .= "$STR{'videoErr'}:<br><span style=\"font-size: 14px;\"><a href=\"$urlVideoPage\" target=\"_blank\">$STR{'videoURL'}</a></span><br>";
+                  }
                 } else {
                   $isText = 1;
-                  $text .= "$STR{'videoErr'}:<br><span style=\"font-size: 14px;\"><a href=\"$urlVideoPage\" target=\"_blank\">$STR{'videoURL'}</a></span><br>";
-                }
-              } else {
-                $isText = 1;
-                my $videoURLText = encode('utf-8', $STR{'videoURL'});
-                $text .= "<span style=\"font-size: 14px;\"><a href=\"$urlVideoPage\" target=\"_blank\">$videoURLText</a></span><br>";
-              }
-            }
-            
-            # Gather vocal message
-            elsif ($part =~ / class="_1miz _2e-1/ and $part =~ / class="_1mj0 _2e-4 _3oh-"[^\>]*>([^\>]+)<\/span><div class="_1mj1 _2e-5"[^\>]*>/) {
-              my $duree = $1;
-              $isText = 1;
-              my $idAudioFile;
-              if ($dateUTime =~ /\./) {
-                $idAudioFile = (split(/\./, $dateUTime))[0];
-                $text .= "<font color=\"#339900\">$STR{'vocalMsgLast'}: </font> <font color=\"#8B2323\">$duree</font><br>";
-                $text .= "<font color=\"#339900\">$STR{'vocalJoin'}:</font> <font color=\"#8B2323\">$idAudioFile.mp4</font><br>";
-                if ($winChat->chDownloadVM->Checked()) {
-                  if (!exists($$refMsgVM{$idAudioFile})) { $$refMsgVM{$idAudioFile} = 0; }
+                  $text .= "<span style=\"font-size: 14px;\"><a href=\"$urlVideoPage\" target=\"_blank\">$STR{'videoURL'}</a></span><br>";
                 }
               }
-            }
-            
-            # Gather attached document (audio attached, pdf, doc, etc.)
-            elsif ($part =~ /_59go _59gq clearfix"[^\>]*><div[^\>]+class="_ohe lfloat"[^\>]*><a[^\>]+href="([^\"]+)"[^\>]*>/) {
-              my $attachedURL = $1;
-              if ($part =~ /<span[^\>]+class="_59gp"[^\>]*>([^\<]+)<\/span>/) {
-                my $attachedName = $1;
-                $attachedName    = decode('UTF-8', $attachedName);
-                my $attachedText = encode('utf-8', $STR{'attached'});
-                $attachedURL =~ s/&amp;/&/g;
+              
+              # Gather vocal message
+              elsif ($part =~ / class="_1miz _2e-1/ and $part =~ / class="_1mj0 _2e-4 _3oh-"[^\>]*>([^\>]+)<\/span><div class="_1mj1 _2e-5"[^\>]*>/) {
+                my $duree = $1;
                 $isText = 1;
-                # Download attached document
-                if ($winChat->chDownloadAD->Checked()) {
-                  if (!-d "$saveDir\\pj_$chatName") { mkdir("$saveDir\\pj_$chatName"); }
-                  my $localPJFile = "$saveDir\\pj_$chatName\\$attachedName";
-                  if ($attachedURL =~ /u=([^\&]+)\&/) {
-                    my $directURL = unescape($1);
-                    $mech->save_url($directURL, $localPJFile);
-                    $text .= "<font color=\"#8B2323\">$attachedText: <a href=\"pj_$chatName\\$attachedName\" target=\"_blank\">$attachedName</a></font><br>";
+                my $idAudioFile;
+                if ($dateUTime =~ /\./) {
+                  $idAudioFile = (split(/\./, $dateUTime))[0];
+                  $text .= "<font color=\"#339900\">$STR{'vocalMsgLast'}: </font> <font color=\"#8B2323\">$duree</font><br>";
+                  $text .= "<font color=\"#339900\">$STR{'vocalJoin'}:</font> <font color=\"#8B2323\">$idAudioFile.mp4</font><br>";
+                  if ($winChat->chDownloadVM->Checked()) {
+                    if (!exists($$refMsgVM{$idAudioFile})) { $$refMsgVM{$idAudioFile} = 0; }
+                  }
+                }
+              }
+              
+              # Gather attached document (audio attached, pdf, doc, etc.)
+              elsif ($part =~ /_59go _59gq clearfix"[^\>]*><div[^\>]+class="_ohe lfloat"[^\>]*><a[^\>]+href="([^\"]+)"[^\>]*>/) {
+                my $attachedURL = $1;
+                if ($part =~ /<span[^\>]+class="_59gp"[^\>]*>([^\<]+)<\/span>/) {
+                  my $attachedName = $1;
+                  $attachedURL =~ s/&amp;/&/g;
+                  $isText = 1;
+                  # Download attached document
+                  if ($winChat->chDownloadAD->Checked()) {
+                    if (!-d "$saveDir\\pj_$chatName") { mkdir("$saveDir\\pj_$chatName"); }
+                    my $localPJFile = "$saveDir\\pj_$chatName\\$attachedName";
+                    if ($attachedURL =~ /u=([^\&]+)\&/) {
+                      my $directURL = unescape($1);
+                      $mech->save_url($directURL, $localPJFile);
+                      $text .= "<font color=\"#8B2323\">$STR{'attached'}: <a href=\"pj_$chatName\\$attachedName\" target=\"_blank\">$attachedName</a></font><br>";
+                    } else {
+                    $text .= "<font color=\"#8B2323\">$STR{'attached'}: <a href=\"$attachedURL\" target=\"_blank\">Download $attachedName</a></font><br>";
+                  }
+                  # Gather the link only
                   } else {
-                  $text .= "<font color=\"#8B2323\">$attachedText: <a href=\"$attachedURL\" target=\"_blank\">Download $attachedName</a></font><br>";
+                    $text .= "<font color=\"#8B2323\">$STR{'attached'}: <a href=\"$attachedURL\" target=\"_blank\">Download $attachedName</a></font><br>";
+                  }
                 }
-                # Gather the link only
-                } else {
-                  $text .= "<font color=\"#8B2323\">$attachedText: <a href=\"$attachedURL\" target=\"_blank\">Download $attachedName</a></font><br>";
+              }                
+              
+              # Notifications (source, Seen: date, etc.)
+              if ($part =~ /<span class="_510f"[^\>]*>(.+)<\/span>/) {
+                my $tempExt = $1;
+                $tempExt =~ s/<\/span>.+//g;
+                if (length($tempExt) > 2) { # Avoid single space notif
+                  $text .= "<br><span style=\"font-size: 14px; color: #6E7B8B;\">$tempExt</span><br>";
                 }
               }
-            }                
-            
-            # Notifications (source, Seen: date, etc.)
-            if ($part =~ /<span class="_510f"[^\>]*>(.+)<\/span>/) {
-              my $tempExt = $1;
-              $tempExt =~ s/<\/span>.+//g;
-              if (length($tempExt) > 2) { # Avoid single space notif
-                $tempExt = decode('iso-8859-1', $tempExt);
-                $text .= "<br><span style=\"font-size: 14px; color: #6E7B8B;\">$tempExt</span><br>";
+              
+              # GPS coordinates
+              if ($GPS_URL) {
+                $text .= "<span style=\"font-size: 14px;\"><a href=\"$GPS_URL\" target=\"_blank\">GPS coordinates</a></span><br>"; }
+              
+              # Save the message
+              if ($text) {
+                # Save interlocutor name
+                if ($headerNameCode->{innerHTML} =~ /$profileName/) { $interlocutor = $profileName; }
+                
+                if ($safeMode) { $$refMsgProfileImg{$dateUTime} = $profileImgUrl; }
+                else           { $$refMsgProfileImg{$dateUTime} = $profileImg;    }
+                $$refMsgProfileUrl{$dateUTime}  = $profileUrl;
+                $$refMsgProfileName{$dateUTime} = $profileName;
+                $$refMsgIsText{$dateUTime}      = $isText;
+                $$refMsgText{$dateUTime}        = $text;
               }
-            }
-            
-            # GPS coordinates
-            if ($GPS_URL) {
-              $text .= "<span style=\"font-size: 14px;\"><a href=\"$GPS_URL\" target=\"_blank\">GPS coordinates</a></span><br>"; }
-            
-            # Save the message
-            if ($text) {
-              # Save interlocutor name
-              if ($headerNameCode->{innerHTML} =~ /$profileName/) { $interlocutor = $profileName; }
-              $$refMsgProfileImg{$dateUTime}  = $profileImg;
-              $$refMsgProfileUrl{$dateUTime}  = $profileUrl;
-              $$refMsgProfileName{$dateUTime} = $profileName;
-              $$refMsgIsText{$dateUTime}      = $isText;
-              $$refMsgText{$dateUTime}        = $text;
             }
           }
         }
@@ -5654,9 +6146,16 @@ sub dumpChat
         elsif ($part =~ /<div class="[^\"]*_42ef[^\"]*">(.+)<\/div>/) {
           if ($part =~ /data-utime="([^\"]+)"/) {
             my $dateUTime = $1;
-            if ($part =~ /<span>([^\<]+)<\/span>/) {
+            my $include   = 1;
+            
+            # Include this message ?
+            if ($dateS or $dateE) {
+              if ($dateS and int($dateUTime) <  $dateS) { $include = 0; } # Out of range
+              if ($dateE and int($dateUTime) >= $dateE) { last;         } # Out of range
+            }
+            
+            if ($include and $part =~ /<span>([^\<]+)<\/span>/) {
               my $notifTxt = $1;
-              $notifTxt = encode('utf8', $notifTxt);
               $$refMsgProfileImg{$dateUTime}  = '-';
               $$refMsgProfileUrl{$dateUTime}  = '-';
               $$refMsgProfileName{$dateUTime} = '-';
@@ -5743,17 +6242,28 @@ sub dumpChat
           foreach my $fileLink (@fileLinks) {
             if ($fileLink->{innerHTML} =~ /audioclip-/ and $fileLink->{innerHTML} =~ /span>(\d{10})<\/span/) {
               my $idFile = $1;
-              if ((exists($$refMsgVM{$idFile}) or exists($$refMsgVM{$idFile-1}) or exists($$refMsgVM{$idFile+1})) and $fileLink->{href} =~ /u=([^\&]+)\&/) {
+              if ((exists($$refMsgVM{$idFile}) or exists($$refMsgVM{$idFile-1}) or exists($$refMsgVM{$idFile+1}) or
+                                                  exists($$refMsgVM{$idFile-2}) or exists($$refMsgVM{$idFile+2}) or
+                                                  exists($$refMsgVM{$idFile-3}) or exists($$refMsgVM{$idFile+3}) or
+                                                  exists($$refMsgVM{$idFile-4}) or exists($$refMsgVM{$idFile+4}) or
+                                                  exists($$refMsgVM{$idFile-5}) or exists($$refMsgVM{$idFile+5})) and
+                  $fileLink->{href} =~ /u=([^\&]+)\&/) {
                 my $url = $1;
                 
                 # IdFile is not exactly the same, change it
-                if (!exists($$refMsgVM{$idFile}) and exists($$refMsgVM{$idFile-1})) { 
+                if (!exists($$refMsgVM{$idFile})) {
                   delete($$refMsgVM{$idFile});
-                  $idFile--;
-                } elsif (!exists($$refMsgVM{$idFile}) and exists($$refMsgVM{$idFile+1})) { 
-                  delete($$refMsgVM{$idFile});
-                  $idFile++;
-                }
+                  if    (exists($$refMsgVM{$idFile-1})) { $idFile -= 1; }
+                  elsif (exists($$refMsgVM{$idFile+1})) { $idFile += 1; }
+                  elsif (exists($$refMsgVM{$idFile-2})) { $idFile -= 2; }
+                  elsif (exists($$refMsgVM{$idFile+2})) { $idFile += 2; }
+                  elsif (exists($$refMsgVM{$idFile-3})) { $idFile -= 3; }
+                  elsif (exists($$refMsgVM{$idFile+3})) { $idFile += 3; }
+                  elsif (exists($$refMsgVM{$idFile-4})) { $idFile -= 4; }
+                  elsif (exists($$refMsgVM{$idFile+4})) { $idFile += 4; }
+                  elsif (exists($$refMsgVM{$idFile-5})) { $idFile -= 5; }
+                  elsif (exists($$refMsgVM{$idFile+5})) { $idFile += 5; }
+                } 
                 
                 $$refMsgVM{$idFile} = unescape($1);
                 $countVM++;
@@ -5809,10 +6319,10 @@ sub dumpChat
     $winPb2->lblPbCurr->Text($STR{'saveChat'}.'...');
     $winPb2->lblCount->Text('');
     my $htmlChatPage = "$saveDir\\$chatName.html";
-    my $titlePage    = encode('utf8', $chatName);
-    open(HTML, ">$htmlChatPage");
+    if (!$interlocutor) { $interlocutor = $chatName; }
+    open(HTML, ">:encoding(UTF-8)", $htmlChatPage);
     print HTML "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\">\n";
-    print HTML "<html>\n<head>\n<title>$titlePage</title>\n";
+    print HTML "<html>\n<head>\n<title>$interlocutor</title>\n";
     print HTML "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf8\">\n";
     print HTML "<style>\n";
     if ($haveEmoticon == 1) {
@@ -5820,29 +6330,21 @@ sub dumpChat
       print HTML "{\n";
       print HTML "  display:inline-block;\n";
       print HTML "  vertical-align:top;\n";
-      if ($winChat->chDownloadAD->Checked()) {
-        print HTML "  background: url(\"images_$titlePage\\\\pimRBh7B6ER.png\");\n";
-      } else {
-        print HTML "  background: url(\"https://www.facebook.com/rsrc.php/v2/yx/r/pimRBh7B6ER.png\");\n";
-      }
+      print HTML "  background: url(\"images_$chatName\\\\pimRBh7B6ER.png\");\n";
       print HTML "  background-repeat:no-repeat;\n";
       print HTML "  background-size:auto;\n";
       print HTML "  width: 16px;\n";
       print HTML "  height: 16px;\n";
       print HTML "  margin:0 1px 0 1px;\n";
       print HTML "}\n";
-      foreach (@emoticons) { print HTML "$_\n"; }
+      foreach (keys %emoticons) { print HTML "$_\n"; }
     }
     if ($cssSprite == 1) {
       print HTML ".sticker16 span\n";
       print HTML "{\n";
       print HTML "  display:inline-block;\n";
       print HTML "  vertical-align:top;\n";
-      if ($winChat->chDownloadAD->Checked()) {
-        print HTML "  background: url(\"images_$titlePage\\\\aeO1ik7i7-T.png\");\n";
-      } else {
-        print HTML "  background: url(\"https://www.facebook.com/rsrc.php/v2/yp/r/aeO1ik7i7-T.png\");\n";
-      }
+      print HTML "  background: url(\"images_$chatName\\\\aeO1ik7i7-T.png\");\n";
       print HTML "  background-repeat:no-repeat;\n";
       print HTML "  background-size:auto;\n";
       print HTML "  width: 16px;\n";
@@ -5866,7 +6368,7 @@ sub dumpChat
     print HTML "</head>\n";
     print HTML "<body style=\"font-family: Calibri, Verdana, Arial; font-size: smaller; color: Black;\">\n";
     print HTML "<h1 style=\"color:#003300; font-size: 18pt; font-variant: small-caps; font-weight: bold;\" align=\"center\">";
-    print HTML "$titlePage</h1>\n";
+    print HTML "$interlocutor</h1>\n";
     print HTML "<table border=1 cellspacing=0 cellpadding=1 align=\"center\">\n";
     if ($startText) {
       print HTML "<tr><td colspan=5 align=\"center\" bgcolor=\"#EEEEEE\">$startText</td></tr>\n";
@@ -5886,29 +6388,30 @@ sub dumpChat
       if ($$refMsgProfileUrl{$date} ne '-' and $$refMsgProfileUrl{$date} !~ /$profilID/) { $isMe = 1; }
       # Print fields
       print HTML "<tr>\n";
-      my $imgPath = "images_$titlePage\\$$refMsgProfileImg{$date}";
-      my $profileName = encode('utf8',$$refMsgProfileName{$date});
+      my $imgPath;
+      if ($safeMode) { $imgPath = "$$refMsgProfileImg{$date}";                    }
+      else           { $imgPath = "images_$chatName\\$$refMsgProfileImg{$date}"; }
       if ($isMe and $winChat->chHideMe->Checked()) { # HideMe
         my $imgTag;
         if ($imgPath ne '-') { $imgTag = "<img src=\"$imgPath\" width=32 height=32 border=0 style=\"display: none;\">"; }
         else { $imgTag = '-'; };
         print HTML "<td align=\"center\" style=\"background-color:black\">$imgTag</td>\n";
         print HTML "<td valign=\"top\" style=\"background-color:black\">$$refMsgProfileUrl{$date}</td>\n";
-        print HTML "<td valign=\"top\" style=\"background-color:black\">$profileName</td>\n";
+        print HTML "<td valign=\"top\" style=\"background-color:black\">$$refMsgProfileName{$date}</td>\n";
       } elsif ($isMe) { # Me, no background color
         my $imgTag;
         if ($imgPath ne '-') { $imgTag = "<img src=\"$imgPath\" width=32 height=32 border=0>"; }
         else { $imgTag = '-'; };
         print HTML "<td align=\"center\">$imgTag</td>\n";
         print HTML "<td valign=\"top\">$$refMsgProfileUrl{$date}</td>\n";
-        print HTML "<td valign=\"top\">$profileName</td>\n";
+        print HTML "<td valign=\"top\">$$refMsgProfileName{$date}</td>\n";
       } else {
         my $imgTag;
         if ($imgPath ne '-') { $imgTag = "<img src=\"$imgPath\" width=32 height=32 border=0>"; }
         else { $imgTag = '-'; };
         print HTML "<td align=\"center\" style=\"background-color:#F9FAFC\">$imgTag</td>\n";
         print HTML "<td valign=\"top\" style=\"background-color:#F9FAFC\">$$refMsgProfileUrl{$date}</td>\n";
-        print HTML "<td valign=\"top\" style=\"background-color:#F9FAFC\">$profileName</td>\n";
+        print HTML "<td valign=\"top\" style=\"background-color:#F9FAFC\">$$refMsgProfileName{$date}</td>\n";
       }
       my $dateStr = &formatDate($date);
       if ($isMe) { print HTML "<td valign=\"top\">$dateStr</td>\n";                                    }
@@ -5994,7 +6497,7 @@ sub btnCancel_Click
     $winPb->lblPbCurr2->Text('');
     $winPb->lblCount2->Text('');
     &winPb_Terminate;
-    $THR->kill('KILL')->detach();
+    if ($THR->is_running()) { $THR->kill('KILL')->detach(); }
     $win->ChangeCursor($ARROW);
   }
   return(1);
@@ -6011,7 +6514,7 @@ sub btnCancel2_Click
     $winPb2->lblPbCurr->Text('');
     $winPb2->lblCount->Text('');
     &winPb2_Terminate;
-    $THR->kill('KILL')->detach();
+    if ($THR->is_running()) { $THR->kill('KILL')->detach(); }
     $win->ChangeCursor($ARROW);
   }
   return(1);
@@ -6036,16 +6539,26 @@ sub winConfig
   $winConfig->lblNbrResume->Show();
   $winConfig->tfNbrResume->Show();
   $winConfig->upNbrResume->Show();
+  $winConfig->chDelTempFiles->Show();
+  $winConfig->chDebugLogging->Show();
+  $winConfig->lblCharset->Show();
+  $winConfig->cbCharset->Show();
   $winConfig->chOptSeemore->Hide();
   $winConfig->chOptComments->Hide();
   $winConfig->chOptPosts->Hide();
-  $winConfig->chOptTranslate->Hide();  
+  $winConfig->chOptTranslate->Hide();
   $winConfig->lblMaxScrollChat->Hide();
+  $winConfig->rbMaxScrollChatByPage->Hide();
   $winConfig->tfMaxScrollChat->Hide();
   $winConfig->upMaxScrollChat->Hide();
+  $winConfig->rbMaxScrollChatByDate->Hide();
+  $winConfig->dtMaxScrollChatByDate->Hide();
   $winConfig->lblMaxScroll->Hide();
+  $winConfig->rbMaxScrollByPage->Hide();
   $winConfig->tfMaxScroll->Hide();
   $winConfig->upMaxScroll->Hide();
+  $winConfig->rbMaxScrollByDate->Hide();
+  $winConfig->dtMaxScrollByDate->Hide();
   $winConfig->chOptScrollTop->Hide();
   
   $winConfig->Center();
@@ -6073,12 +6586,20 @@ sub configTab_Click
     $winConfig->upNbrResume->Show();
     $winConfig->chDelTempFiles->Show();
     $winConfig->chDebugLogging->Show();
+    $winConfig->lblCharset->Show();
+    $winConfig->cbCharset->Show();
     $winConfig->lblMaxScrollChat->Hide();
+    $winConfig->rbMaxScrollChatByPage->Hide();
     $winConfig->tfMaxScrollChat->Hide();
     $winConfig->upMaxScrollChat->Hide();
+    $winConfig->rbMaxScrollChatByDate->Hide();
+    $winConfig->dtMaxScrollChatByDate->Hide();
     $winConfig->lblMaxScroll->Hide();
+    $winConfig->rbMaxScrollByPage->Hide();
     $winConfig->tfMaxScroll->Hide();
     $winConfig->upMaxScroll->Hide();
+    $winConfig->rbMaxScrollByDate->Hide();
+    $winConfig->dtMaxScrollByDate->Hide();
     $winConfig->chOptScrollTop->Hide();
     $winConfig->chOptSeemore->Hide();
     $winConfig->chOptComments->Hide();
@@ -6088,11 +6609,17 @@ sub configTab_Click
   # Show Scroll Options
   } elsif ($winConfig->configTab->SelectedItem() == 1) {
     $winConfig->lblMaxScrollChat->Show();
+    $winConfig->rbMaxScrollChatByPage->Show();
     $winConfig->tfMaxScrollChat->Show();
     $winConfig->upMaxScrollChat->Show();
+    $winConfig->rbMaxScrollChatByDate->Show();
+    $winConfig->dtMaxScrollChatByDate->Show();
     $winConfig->lblMaxScroll->Show();
+    $winConfig->rbMaxScrollByPage->Show();
     $winConfig->tfMaxScroll->Show();
     $winConfig->upMaxScroll->Show();
+    $winConfig->rbMaxScrollByDate->Show();
+    $winConfig->dtMaxScrollByDate->Show();
     $winConfig->chOptScrollTop->Show();
     $winConfig->chOptSeemore->Hide();
     $winConfig->chOptComments->Hide();
@@ -6112,6 +6639,8 @@ sub configTab_Click
     $winConfig->upNbrResume->Hide();
     $winConfig->chDelTempFiles->Hide();
     $winConfig->chDebugLogging->Hide();
+    $winConfig->lblCharset->Hide();
+    $winConfig->cbCharset->Hide();
   
   # Show Chat options
   } else {
@@ -6133,12 +6662,20 @@ sub configTab_Click
     $winConfig->upNbrResume->Hide();
     $winConfig->chDelTempFiles->Hide();
     $winConfig->chDebugLogging->Hide();
+    $winConfig->lblCharset->Hide();
+    $winConfig->cbCharset->Hide();
     $winConfig->lblMaxScrollChat->Hide();
+    $winConfig->rbMaxScrollChatByPage->Hide();
     $winConfig->tfMaxScrollChat->Hide();
     $winConfig->upMaxScrollChat->Hide();
+    $winConfig->rbMaxScrollChatByDate->Hide();
+    $winConfig->dtMaxScrollChatByDate->Hide();
     $winConfig->lblMaxScroll->Hide();
+    $winConfig->rbMaxScrollByPage->Hide();
     $winConfig->tfMaxScroll->Hide();
     $winConfig->upMaxScroll->Hide();
+    $winConfig->rbMaxScrollByDate->Hide();
+    $winConfig->dtMaxScrollByDate->Hide();
     $winConfig->chOptScrollTop->Hide();
   }
 
@@ -6198,28 +6735,22 @@ sub checkUpdate
       if ($confirm) { Win32::GUI::MessageBox($win, $STR{'update1'}, $STR{'update2'}, 0x40040); } # Up to date
     } else {
       $win->Show();
-      my $answer = Win32::GUI::MessageBox($win, "$STR{'update4'} $currVer $STR{'update5'} ?", $STR{'update3'}, 0x40024); # Download available
-      # Download the update
-      if ($answer == 6) { &update; }
+      # Download with browser
+      my $answer = Win32::GUI::MessageBox($winConfig, "$STR{'update4'} $currVer $STR{'update5'} ?", $STR{'update3'}, 0x40024);
+      if ($answer == 6) {
+        # Open Firefox to XL-Tools page
+        $win->ShellExecute('open', $URL_TOOL,'','',1) or Win32::GUI::MessageBox($win, Win32::FormatMessage(Win32::GetLastError()), "$STR{'update3'} ExtractFace",0x40010);
+      }
     }
   }
   # Error 
   else {
     my $status  = $res->code;
     my $error   = $res->status_line;
-    Win32::GUI::MessageBox($win, "$STR{'err1T'}: $STR{'update6'} = [$status]; $STR{'update7'} = [$error].", $STR{'err7'},0x40010);
+    Win32::GUI::MessageBox($win, "$STR{'err1T'}: $STR{'returnedCode'} = [$status]; $STR{'returnedError'} = [$error].", $STR{'err7'},0x40010);
   }
 
 }  #--- End checkUpdate
-
-#--------------------------#
-sub update
-#--------------------------#
-{
-  # Open Firefox to ExtractFace page
-  $win->ShellExecute('open', $URL_TOOL,'','',1) or Win32::GUI::MessageBox($win, Win32::FormatMessage(Win32::GetLastError()), $STR{'err7'},0x40010);
-
-}  #--- End update
 
 #--------------------------#
 sub chAutoUpdate_Click
@@ -6297,14 +6828,28 @@ sub chDebugLogging_Click
 }  #--- End chDebugLogging_Click
 
 #--------------------------#
+sub cbCharset_Change
+#--------------------------#
+{
+  my $charset = $winConfig->cbCharset->GetString($winConfig->cbCharset->GetCurSel());
+  
+  # Save the choice
+  $CONFIG{'CHARSET'} = $charset;
+  &saveConfig(\%CONFIG);
+
+}  #--- End cbCharset_Change
+
+#--------------------------#
 sub tfMaxScrollChat_Change
 #--------------------------#
 {
   # Local variables
   my $maxScroll = $winConfig->tfMaxScrollChat->Text();
-  
+
   # Remember
   if ($START == 1) {
+    $winConfig->rbMaxScrollChatByDate->Checked(0);
+    $winConfig->rbMaxScrollChatByPage->Checked(1);
     $CONFIG{'MAX_LOADING_MSG'} = $maxScroll;
     &saveConfig(\%CONFIG);
   }
@@ -6312,19 +6857,39 @@ sub tfMaxScrollChat_Change
 }  #--- End tfMaxScrollChat_Change
 
 #--------------------------#
+sub dtMaxScrollChatByDate_Change
+#--------------------------#
+{
+  $winConfig->rbMaxScrollChatByPage->Checked(0);
+  $winConfig->rbMaxScrollChatByDate->Checked(1);
+
+}  #--- End dtMaxScrollChatByDate_Change
+
+#--------------------------#
 sub tfMaxScroll_Change
 #--------------------------#
 {
   # Local variables
-  my $maxScroll = $winConfig->tfMaxScroll->Text();
+  my $maxScroll = $winConfig->tfMaxScroll->Text();  
   
   # Remember
   if ($START == 1) {
+    $winConfig->rbMaxScrollByDate->Checked(0);
+    $winConfig->rbMaxScrollByPage->Checked(1);
     $CONFIG{'MAX_SCROLL'} = $maxScroll;
     &saveConfig(\%CONFIG);
   }
 
 }  #--- End tfMaxScroll_Change
+
+#--------------------------#
+sub dtMaxScrollByDate_Change
+#--------------------------#
+{
+  $winConfig->rbMaxScrollByPage->Checked(0);
+  $winConfig->rbMaxScrollByDate->Checked(1);
+
+}  #--- End dtMaxScrollByDate_Change
 
 #--------------------------#
 sub chOptScrollTop_Click
@@ -6405,12 +6970,8 @@ sub chOptTranslate_Click
 sub help
 #--------------------------#
 {
-  if (-e $HELP_FILE) {
-    # Open the page
-    $win->ShellExecute('open', $HELP_FILE,'','',1);
-  } else {
-    Win32::GUI::MessageBox($win, "Documentation.chm $STR{'err8'}", $STR{'err1T'},0x40010);
-  }  
+  # Open Firefox to XL-Tools page
+  $win->ShellExecute('open', $URL_DOC,'','',1) or Win32::GUI::MessageBox($win, Win32::FormatMessage(Win32::GetLastError()), "$STR{'update3'} ExtractFace",0x40010);
 
 }  #--- End help
 
@@ -6424,7 +6985,11 @@ sub loadPage
   $$refMech->get($url, synchronize => 0);
   sleep($CONFIG{'TIME_TO_WAIT'});
   my $currURL   = $$refMech->uri();
-  my $currTitle = $$refMech->title();
+  my $currTitle;
+  if ($currURL and $currURL =~ /https:\/\/www.facebook.com\//) {
+    if    ($currURL =~ /https:\/\/www.facebook.com\/profile.php\?id=([^\/\&]+)/) { $currTitle = $1; }
+    elsif ($currURL =~ /https:\/\/www.facebook.com\/([^\/\?]+)/                ) { $currTitle = $1; }
+  }
 
   return($currURL, $currTitle);
 
@@ -6504,6 +7069,10 @@ sub loadConfig
     }
   }
   
+  # Start minimized
+  if (exists($$refConfig{'START_MINIMIZED'}))       { $win->chStartMinimized->Checked($$refConfig{'START_MINIMIZED'});                  }
+  else                                              { $win->chStartMinimized->Checked(0);                                               } # Default is not checked
+  
   # General settings
   if (exists($$refConfig{'TIME_TO_WAIT'}))          { $winConfig->upTimeToWait->SetPos($$refConfig{'TIME_TO_WAIT'});                    }
   else                                              { $winConfig->upTimeToWait->SetPos(2); $$refConfig{'TIME_TO_WAIT'} =  2;            } # Default value is 2
@@ -6517,6 +7086,8 @@ sub loadConfig
   else                                              { $winConfig->chDelTempFiles->Checked(1); $$refConfig{'DEL_TEMP_FILES'} = 1;        } # Default is checked
   if (exists($$refConfig{'DEBUG_LOGGING'}))         { $winConfig->chDebugLogging->Checked($$refConfig{'DEBUG_LOGGING'});                }
   else                                              { $winConfig->chDebugLogging->Checked(0); $$refConfig{'DEBUG_LOGGING'} = 0;         } # Default is not checked
+  if (exists($$refConfig{'CHARSET'}))               { $winConfig->cbCharset->SetCurSel($winConfig->cbCharset->FindString($$refConfig{'CHARSET'})); }
+  else                                              { $winConfig->cbCharset->SetCurSel(0);    $$refConfig{'CHARSET'} = 'cp1252';        } # Default is cp1252
   if (exists($$refConfig{'EXPAND_SEE_MORE'}))       { $winConfig->chOptSeemore->Checked($$refConfig{'EXPAND_SEE_MORE'});                }
   else                                              { $winConfig->chOptSeemore->Checked(1);   $$refConfig{'EXPAND_SEE_MORE'}      = 1;  } # Default is checked
   if (exists($$refConfig{'EXPAND_MORE_POSTS'}))     { $winConfig->chOptPosts->Checked($$refConfig{'EXPAND_MORE_POSTS'});                }
@@ -6688,20 +7259,36 @@ sub scrollToBottom
   # Local variables
   my ($refMech, $time, $count) = @_;
   
-  my $maxScroll = $winConfig->tfMaxScroll->Text();
+  my $maxScrollByDate = $winConfig->rbMaxScrollByDate->Checked();
+  my $maxDate;
+  my $maxScroll;
+  if ($maxScrollByDate) {
+    my ($d, $m, $y) = $winConfig->dtMaxScrollByDate->GetDate();
+    $maxDate        = timelocal(0,0,0,$d,$m-1,$y); # Store in Unixtime format
+  } else { $maxScroll = $winConfig->tfMaxScroll->Text(); }
+  
   while (1) {
     # Scrolling down and wait for content to load
     $$refMech->eval_in_page('window.scrollTo(0,document.body.scrollHeight)');
     $count++;
-    if ($maxScroll and $count >= $maxScroll) { last; } # Maximum scrolling reached
     sleep($time);
+    
+    # Scroll again
+    if ($maxScrollByDate and $maxDate) { # Stop by date
+      my $lastDisplayedDate = ($$refMech->selector('a._5pcq abbr'))[-1];
+      if ($lastDisplayedDate->{outerHTML} =~ /data-utime="([^\"]+)"/) {
+        my $date = $1;
+        if ($date <= $maxDate) { return(1); }
+      }
+    } elsif ($maxScroll and $count >= $maxScroll) { return(1); } # Stop by page
     
     # Evaluate end of the page
     my ($end, $type) = $$refMech->eval_in_page('(window.innerHeight + window.scrollY) >= document.body.offsetHeight');
-    if ($end == 1) {
-      sleep($time); # Wait another X seconds and evaluate again
+    if ($end == 1) { # End of the page, done ? Really ? With a bit more
+      sleep($time);
+      $$refMech->eval_in_page('window.scrollTo(0,document.body.scrollHeight)');
       ($end, $type) = $$refMech->eval_in_page('(window.innerHeight + window.scrollY) >= document.body.offsetHeight');
-      if ($end == 1) { last; } # End of the page
+      if ($end == 1) { return(1); }
     }
   }
 

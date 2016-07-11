@@ -70,6 +70,7 @@ sub loadDefaultStr
   $$refSTR{'remDir'}      = 'Remember this dir';
   $$refSTR{'selDir'}      = 'Select a folder';
   $$refSTR{'dump'}        = 'Dump';
+  $$refSTR{'download'}    = 'Download';
   $$refSTR{'lblOptions'}  = 'Options';
   $$refSTR{'openXLSX'}    = 'Open output XLSX file';
   $$refSTR{'save'}        = 'Save';
@@ -95,6 +96,9 @@ sub loadDefaultStr
   $$refSTR{'eventURL'}    = 'Event URL';
   $$refSTR{'count'}       = 'Count';
   $$refSTR{'date'}        = 'Date';
+  $$refSTR{'dates'}       = 'Dates';
+  $$refSTR{'start'}       = 'Start';
+  $$refSTR{'end'}         = 'End';
   $$refSTR{'message'}     = 'Message';
   $$refSTR{'warn1T'}      = 'Process running';
   $$refSTR{'warn1'}       = 'A process is already running. Wait until it stops or restart the program.';
@@ -114,11 +118,12 @@ sub loadDefaultStr
   $$refSTR{'crash'}       = 'Crashed, ExtractFace will try to resume';
   
   # About
-  $$refSTR{'author'}          = 'Author';
-  $$refSTR{'translatedBy'}    = 'Translated by';
-  $$refSTR{'website'}         = 'Website';
-  $$refSTR{'translatorName'}  = '-';
-  $$refSTR{'lblText4'}        = 'Use taskbar icon to access functions';
+  $$refSTR{'author'}            = 'Author';
+  $$refSTR{'translatedBy'}      = 'Translated by';
+  $$refSTR{'website'}           = 'Website';
+  $$refSTR{'translatorName'}    = '-';
+  $$refSTR{'chStartMinimized'}  = "Don't show this window on startup";
+  $$refSTR{'lblText4'}          = 'Use taskbar icon to access functions';
   
   # Taskbar menu
   $$refSTR{'menu1'}    = 'Scroll and Expand';
@@ -166,7 +171,7 @@ sub loadDefaultStr
   $$refSTR{'friends'}        = 'Friends';
   $$refSTR{'friends2'}       = 'friends';
   $$refSTR{'chIncludeIcons'} = 'Include profile icons';
-  $$refSTR{'chSafeMode'}     = 'Use safe mode';
+  $$refSTR{'chSafeMode'}     = 'Safe mode';
   $$refSTR{'friendCat'}      = 'Category';
   $$refSTR{'friendsExtract'} = 'Extracting info for profile ID';
   $$refSTR{'dumpFriendsC'}   = 'Dumping friends cancelled';
@@ -192,6 +197,7 @@ sub loadDefaultStr
   $$refSTR{'chContribComments'} = 'Comments';
   $$refSTR{'chContribLikes'}    = 'Likes';
   $$refSTR{'chContribVPosts'}   = 'Visitor Posts';
+  $$refSTR{'dontScrollVPosts'}  = "Don't scroll Visitor Posts";
   $$refSTR{'dumpContribC'}      = 'Dumping contributors cancelled';
   $$refSTR{'dumpContribP'}      = 'Dumping contributors in progress';
   $$refSTR{'dumpCommentsP'}     = 'Dumping Comments in progress';
@@ -210,9 +216,15 @@ sub loadDefaultStr
   $$refSTR{'scrollChat3P'}  = 'Loading older messages in progress';
   $$refSTR{'scrollChat3F'}  = 'Loading older messages finished';
   $$refSTR{'winChat'}       = 'Dump chat';
-  $$refSTR{'chDownloadAD'}  = 'Download attached document (files, audio, video)';
-  $$refSTR{'chDownloadImg'} = 'Download image in full size';
-  $$refSTR{'chDownloadVM'}  = 'Download vocal messages';
+  $$refSTR{'chat'}          = 'Chat';
+  $$refSTR{'rbChatNormalMode'} = 'Normal mode';
+  $$refSTR{'rbChatDatesAll'}   = 'All';
+  $$refSTR{'rbChatDatesRange'} = 'Range';
+  $$refSTR{'chDownloadAD'}  = 'Attached document';
+  $$refSTR{'chDownloadImg'} = 'Pictures';
+  $$refSTR{'chFullSize'}    = 'Full size';
+  $$refSTR{'chDownloadVid'} = 'Videos';
+  $$refSTR{'chDownloadVM'}  = 'Vocal messages';
   $$refSTR{'chHideMe'}      = 'Hide me';
   $$refSTR{'chSearched'}    = 'Searched part only';
   $$refSTR{'sharedLink'}    = 'Shared link';
@@ -246,6 +258,7 @@ sub loadDefaultStr
   $$refSTR{'chDelTempFiles'}  = 'Delete temp files when finished';
   $$refSTR{'chDebugLogging'}  = 'Enable debug logging';
   $$refSTR{'btnExportLang'}   = 'Export Lang.ini';
+  $$refSTR{'lblCharset'}      = 'Charset';
   $$refSTR{'lblScrollOpt'}    = 'Scroll options';
   $$refSTR{'lblExpOpt'}       = 'Expand options';
   $$refSTR{'chOptSeemore'}    = 'See more';
@@ -253,18 +266,24 @@ sub loadDefaultStr
   $$refSTR{'chOptPosts'}      = 'More posts';
   $$refSTR{'chOptTranslate'}  = 'See translation';
   $$refSTR{'lblMaxLoading'}   = 'Maximum scrolling (chat)';
-  $$refSTR{'tfMaxScrollTip'}  = 'Maximum number of times ExtractFace will scroll. Default is 0 (No maximum).';
   $$refSTR{'lblMaxScroll'}    = 'Maximum scrolling (other)';
+  $$refSTR{'rbMaxScrollByPage'}     = 'By page';
+  $$refSTR{'rbMaxScrollByDate'}     = 'By date';
+  $$refSTR{'tfMaxScrollByPageTip'}  = 'Stop scrolling after a maximum of pages displayed. Default is 0 (No maximum).';
+  $$refSTR{'tfMaxScrollByDateTip'}  = 'Stop scrolling when the given date is reached.';
   
   # Misc
-  $$refSTR{'winPb'}   = 'Progress';
-  $$refSTR{'update1'} = 'You have the latest version installed.';
-  $$refSTR{'update2'} = 'Check for update';
-  $$refSTR{'update3'} = 'Update';
-  $$refSTR{'update4'} = 'Version';
-  $$refSTR{'update5'} = 'is available. Download it';
-  $$refSTR{'update6'} = 'Returned code';
-  $$refSTR{'update7'} = 'Returned error';
+  $$refSTR{'winPb'}           = 'Progress';
+  $$refSTR{'returnedCode'}    = 'Returned code';
+  $$refSTR{'returnedError'}   = 'Returned error';
+  
+  # Update Window
+  $$refSTR{'winUpdate'}       = 'Update';
+  $$refSTR{'update1'}         = 'You have the latest version installed.';
+  $$refSTR{'update2'}         = 'Check for update';
+  $$refSTR{'update3'}         = 'Update';
+  $$refSTR{'update4'}         = 'Version';
+  $$refSTR{'update5'}         = 'is available. Download it';
 
 }  #--- End loadStrings
 
