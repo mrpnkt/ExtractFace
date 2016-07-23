@@ -9767,8 +9767,27 @@ x8fHx8fHx8fHx8fHx8fHx8fHx8fH////////18e92aF705Ns05Ns05Ns05Ns05Ns05Ns05Ns05Ns
 ////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////
 ) );
+  
+  my $explorerBmp = Win32::GUI::BitmapInline->new( q(
+Qk02AwAAAAAAADYAAAAoAAAAEAAAABAAAAABABgAAAAAAAADAADEDgAAxA4AAAAAAAAAAAAA////
+////////////////////////////////////////////////////////////+vv78fP28PL07/H0
+7/H07/L07/Hz7/Hz7/Hz7/L07/H07e3u7e/w8PL08fT2+vr71tXSgnFbempVemtWemtWemtWe2tW
+e2tWe2tWe2xXe2pXcV9LeF5Ke2tXgnBa09HOx7ah2al/4Kd33ql636p74Kx84ax936t936p94Kt9
+7KZ4HI1rSWhGzIdb3KyDxbak1se22qR24Kh14Kl54qt73aR1yItfuHhPs3FJs3JKwGtBDI5lIbmF
+KmRCvIBW1MSz1ci33q2D6LaJ6LeM5a+GjnFKN3FNGpJsD5RrEZNrEpJqH6N0AKRjJb+OFG9Hw66c
+1Me537OO6b2X78Ccn4pjGKaBCsCLAK91AK1yAK5yAK5yAKxyAKxzAKpuIMqcQpRx0se74bua7Min
++MirQo1lLNGraNi8bt3EdeHKduHLd+LMc97FYNO1cODGLq2IhKCE0ce74sKn7tG2/9K5IptvZ+jQ
+SLaVbaiCdJ51dpxyeJltOqB4hPHgQayHu6uI4MzD0Me+48mz8dnE/97MPaJ5W860vrma/+XV/+PS
+/+LR/+LUTLSQOqV85Myy8M64zsW7zsfA5M268t/O/+XYZqN1VrmW/+bb9OPV8+PV9OPU/ObYjLeR
+6NfC+uHR5M65zcS8zcnD+Ovg/fLn//Xt6OjYAI1K//Ts//fx//bw/vbu//Xt//jx//Tr/fHn+uvf
+0cvG3d3diImJtLa2sbKyura5vL26ubi5u7y8ubm5ubm6t7i4tre3tLa2t7i5iouL1dXV////sbGx
+6Ojo6+vr6urq7Ovs6enppKSkxcXFw8PDw8PDw8PDw8PDwsLC0tLS/////////f39wcHBvr6+v7+/
+vr6+wMDA/f39////////////////////////////////////////////////////////////////
+////////////////////////////////
+) );
 
-  return($winICO, $logoBmp, $albumBmp, $friendsBmp, $eventBmp, $contribBmp, $chatBmp, $configBmp, $browseBmp);
+  return($winICO, $logoBmp, $albumBmp, $friendsBmp, $eventBmp, $contribBmp,
+         $chatBmp, $configBmp, $browseBmp, $explorerBmp);
   
 }
 

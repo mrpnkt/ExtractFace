@@ -6,8 +6,8 @@
 # GitHub		  : https://github.com/arioux/ExtractFace
 # Description : Dump Facebook stuff for analysis or reporting purposes
 # Creation    : 2015-08-01
-# Modified    : 2016-07-07
-my $VERSION   = "4.0";
+# Modified    : 2016-07-23
+my $VERSION   = "4.1";
 # Author      : Alain Rioux (admin@le-tools.com)
 #
 # Copyright (C) 2015-2016  Alain Rioux (le-tools.com)
@@ -66,7 +66,8 @@ require "ExtractFaceLang.pl";
 # Graphic elements
 #------------------------------------------------------------------------------#
 
-my ($winICO, $logoBmp, $albumBmp, $friendsBmp, $eventBmp, $contribBmp, $chatBmp, $configBmp, $browseBmp) = &loadGraph();
+my ($winICO, $logoBmp, $albumBmp, $friendsBmp, $eventBmp, $contribBmp, $chatBmp,
+    $configBmp, $browseBmp, $explorerBmp) = &loadGraph();
   
 #------------------------------------------------------------------------------#
 # Global variables
@@ -300,6 +301,11 @@ $winAlbums->AddButton(            -name         => 'btnDirSaveAlbums'           
                                   -size         => [ 22, 22]                      ,
                                   -pos          => [662, 45]                      ,
                                   -bitmap       => $browseBmp                     , );
+$winAlbums->AddButton(            -name         => 'btnBrowseDirSaveAlbums'       ,
+                                  -size         => [ 22, 22]                      ,
+                                  -pos          => [685, 45]                      ,
+                                  -bitmap       => $explorerBmp                   ,
+                                  -tip          => $STR{'browseFolder'}           , );
 $winAlbums->AddCheckbox(          -name         => 'chSaveAlbumDir'               ,
                                   -size         => [200, 20]                      ,
                                   -pos          => [220, 73]                      ,
@@ -403,6 +409,12 @@ $winFriends->AddButton(             -name       => 'btnDirSaveFriends'          
                                     -size       => [ 22, 22]                      ,
                                     -pos        => [662, 45]                      ,
                                     -bitmap     => $browseBmp                     ,
+                                    -tabstop    => 1                              , );
+$winFriends->AddButton(             -name       => 'btnBrowseDirSaveFriends'      ,
+                                    -size       => [ 22, 22]                      ,
+                                    -pos        => [685, 45]                      ,
+                                    -bitmap     => $explorerBmp                   ,
+                                    -tip        => $STR{'browseFolder'}           ,
                                     -tabstop    => 1                              , );
 $winFriends->AddCheckbox(           -name       => 'chSaveFriendsDir'             ,
                                     -size       => [200, 20]                      ,
@@ -511,6 +523,12 @@ $winEvent->AddButton(             -name         => 'btnDirSaveEvent'            
                                   -pos          => [562, 45]                      ,
                                   -bitmap       => $browseBmp                     ,
                                   -tabstop      => 1                              , );
+$winEvent->AddButton(             -name         => 'btnBrowseDirSaveEvent'        ,
+                                  -size         => [ 22, 22]                      ,
+                                  -pos          => [585, 45]                      ,
+                                  -bitmap       => $explorerBmp                   ,
+                                  -tip          => $STR{'browseFolder'}           ,
+                                  -tabstop      => 1                              , );
 $winEvent->AddCheckbox(           -name         => 'chSaveEventDir'               ,
                                   -size         => [200, 20]                      ,
                                   -pos          => [220, 73]                      ,
@@ -595,7 +613,7 @@ $winEvent->AddLabel(              -name         => 'lblGuestLists'              
                                   -font         => $font10                        ,
                                   -background   => [255, 255, 255]                , );
 $winEvent->AddCheckbox(           -name         => 'chGoing'                      ,
-                                  -size         => [140, 20]                      ,
+                                  -size         => [160, 20]                      ,
                                   -pos          => [260,255]                      ,
                                   -text         => 'Going'                        ,
                                   -background   => [255, 255, 255]                ,
@@ -603,15 +621,15 @@ $winEvent->AddCheckbox(           -name         => 'chGoing'                    
                                   -tabstop      => 1                              ,
                                   -checked      => 0                              , );
 $winEvent->AddCheckbox(           -name         => 'chMaybe'                      ,
-                                  -size         => [140, 20]                      ,
-                                  -pos          => [405,255]                      ,
+                                  -size         => [160, 20]                      ,
+                                  -pos          => [425,255]                      ,
                                   -text         => 'Maybe'                        ,
                                   -background   => [255, 255, 255]                ,
                                   -font         => $font10                        ,
                                   -tabstop      => 1                              ,
                                   -checked      => 0                              , );
 $winEvent->AddCheckbox(           -name         => 'chInvited'                    ,
-                                  -size         => [140, 20]                      ,
+                                  -size         => [160, 20]                      ,
                                   -pos          => [260,278]                      ,
                                   -text         => 'Invited'                      ,
                                   -background   => [255, 255, 255]                ,
@@ -619,8 +637,8 @@ $winEvent->AddCheckbox(           -name         => 'chInvited'                  
                                   -tabstop      => 1                              ,
                                   -checked      => 0                              , );
 $winEvent->AddCheckbox(           -name         => 'chDeclined'                   ,
-                                  -size         => [140, 20]                      ,
-                                  -pos          => [405,278]                      ,
+                                  -size         => [160, 20]                      ,
+                                  -pos          => [425,278]                      ,
                                   -text         => 'Declined'                     ,
                                   -background   => [255, 255, 255]                ,
                                   -font         => $font10                        ,
@@ -643,7 +661,7 @@ my $winContrib = Win32::GUI::DialogBox->new(  -name        => 'winContrib'      
                                               -parent      => $win                           ,
                                               -text        => $STR{'menu17'}                 ,
                                               -pos         => [($scrnX-650)/2,($scrnY-295)/2],
-                                              -size        => [600,320]                      ,
+                                              -size        => [625,320]                      ,
                                               -background  => [255, 255, 255]                ,
                                               -hasmaximize => 0                              ,
                                               -hasminimize => 1                              ,
@@ -674,13 +692,19 @@ $winContrib->AddLabel(            -name       => 'lblDirSaveContrib'            
                                   -font       => $font10                        ,
                                   -background => [255, 255, 255]                , );
 $winContrib->AddTextfield(        -name       => 'tfDirSaveContrib'             ,
-                                  -size       => [340, 22]                      ,
+                                  -size       => [342, 22]                      ,
                                   -pos        => [220, 45]                      ,
                                   -tabstop    => 1                              , );
 $winContrib->AddButton(           -name       => 'btnDirSaveContrib'            ,
                                   -size       => [ 22, 22]                      ,
-                                  -pos        => [562, 45]                      ,
+                                  -pos        => [564, 45]                      ,
                                   -bitmap     => $browseBmp                     ,
+                                  -tabstop    => 1                              , );
+$winContrib->AddButton(           -name       => 'btnBrowseDirSaveContrib'      ,
+                                  -size       => [ 22, 22]                      ,
+                                  -pos        => [587, 45]                      ,
+                                  -bitmap     => $explorerBmp                   ,
+                                  -tip        => $STR{'browseFolder'}           ,
                                   -tabstop    => 1                              , );
 $winContrib->AddCheckbox(         -name       => 'chSaveContribDir'             ,
                                   -size       => [200, 20]                      ,
@@ -693,7 +717,7 @@ $winContrib->AddCheckbox(         -name       => 'chSaveContribDir'             
 
 # Types section
 $winContrib->AddLabel(            -name       => 'lblContribCat'                ,
-                                  -size       => [445, 22]                      ,
+                                  -size       => [470, 22]                      ,
                                   -pos        => [140,102]                      ,
                                   -text       => $STR{'lblContribTypes'}        ,
                                   -font       => $fontGB                        ,
@@ -725,7 +749,7 @@ $winContrib->AddCheckbox(         -name       => 'chContribVPosts'              
 
 # Options section
 $winContrib->AddLabel(            -name       => 'lblContribOpt'                ,
-                                  -size       => [445, 22]                      ,
+                                  -size       => [470, 22]                      ,
                                   -pos        => [140,162]                      ,
                                   -text       => $STR{'lblOptions'}             ,
                                   -font       => $fontGB                        ,
@@ -772,7 +796,7 @@ my $winChat = Win32::GUI::DialogBox->new(  -name        => 'winChat'            
                                            -parent      => $win                           ,
                                            -text        => $STR{'winChat'}                ,
                                            -pos         => [$winChatPosX, $winChatPosY]   ,
-                                           -size        => [640,340]                      ,
+                                           -size        => [665,340]                      ,
                                            -background  => [255, 255, 255]                ,
                                            -hasmaximize => 0                              ,
                                            -hasminimize => 1                              ,
@@ -804,13 +828,19 @@ $winChat->AddLabel(               -name       => 'lblDirSaveChat'               
                                   -font       => $font10                        ,
                                   -background => [255, 255, 255]                , );
 $winChat->AddTextfield(           -name       => 'tfDirSaveChat'                ,
-                                  -size       => [380, 22]                      ,
+                                  -size       => [383, 22]                      ,
                                   -pos        => [220, 45]                      ,
                                   -tabstop    => 1                              , );
 $winChat->AddButton(              -name       => 'btnDirSaveChat'               ,
                                   -size       => [ 22, 22]                      ,
-                                  -pos        => [602, 45]                      ,
+                                  -pos        => [605, 45]                      ,
                                   -bitmap     => $browseBmp                     ,
+                                  -tabstop    => 1                              , );
+$winChat->AddButton(              -name       => 'btnBrowseDirSaveChat'         ,
+                                  -size       => [ 22, 22]                      ,
+                                  -pos        => [628, 45]                      ,
+                                  -bitmap     => $explorerBmp                   ,
+                                  -tip        => $STR{'browseFolder'}           ,
                                   -tabstop    => 1                              , );
 $winChat->AddCheckbox(            -name       => 'chSaveChatDir'                ,
                                   -size       => [200, 20]                      ,
@@ -823,7 +853,7 @@ $winChat->AddCheckbox(            -name       => 'chSaveChatDir'                
 
 # Options
 $winChat->AddLabel(               -name       => 'lblChatOpt'                   ,
-                                  -size       => [485, 22]                      ,
+                                  -size       => [510, 22]                      ,
                                   -pos        => [140,100]                      ,
                                   -text       => $STR{'lblOptions'}             ,
                                   -font       => $fontGB                        ,
@@ -1106,6 +1136,12 @@ $winConfig->cbCharset->Add('cp1252'     , 'iso-8859-1' , 'iso-8859-2' , 'iso-885
                            'iso-8859-4' , 'iso-8859-5' , 'iso-8859-6' , 'iso-8859-7' ,
                            'iso-8859-8' , 'iso-8859-9' , 'iso-8859-10', 'iso-8859-11', 
                            'iso-8859-13', 'iso-8859-14', 'iso-8859-15', 'iso-8859-16', );
+$winConfig->AddButton(     -name       => 'btnOpenLog'          ,
+                           -size       => [150, 24]             ,
+                           -pos        => [400,230]             ,
+                           -text       => $STR{'OpenLog'}       ,
+                           -font       => $font10               ,
+                           -visible    => 0                     , );
 
 # Scroll options
 $winConfig->AddLabel(       -name        => 'lblMaxScrollChat'    ,
@@ -1983,6 +2019,7 @@ sub validAlbumPage
   
   # Write title (used for HTML Album)
   if ($currTitle) {
+    if ($currTitle =~ /#$/) { chop($currTitle); }
     $currTitle .= " - Albums";
     $winAlbums->tfAlbumTitle->Text($currTitle);
   }
@@ -2040,6 +2077,25 @@ sub btnDirSaveAlbums_Click
   }
   
 }  #--- End btnDirSaveAlbums_Click
+
+#--------------------------#
+sub btnBrowseDirSaveAlbums_Click
+#--------------------------#
+{
+  # Local variables
+  my $outputDir = $winAlbums->tfDirSaveAlbums->Text();
+  
+  if (-d $outputDir) {
+    # Open Window Explorer
+    Win32::Process::Create(my $ProcessObj                 ,
+                           "$ENV{'WINDIR'}\\explorer.exe" ,
+                           "explorer $outputDir"          ,
+                           0                              ,
+                           NORMAL_PRIORITY_CLASS          ,
+                           ".");
+  }
+  
+}  #--- End btnBrowseDirSaveAlbums_Click
 
 #--------------------------#
 sub chSaveAlbumDir_Click
@@ -2686,7 +2742,8 @@ sub winFriendsThr
     $winFriends->btnFriendsOk->Disable();
     $winFriends->lblInProgress->Text($STR{'wait'}.'...');
     $winFriends->ChangeCursor($HOURGLASS);
-    my $currURL   = $mech->uri();
+    my $currURL = $mech->uri();
+    if ($currURL =~ /#$/) { chop($currURL); }
     my $currTitle;
     if ($currURL !~ /\/friends\/?$/ and $currURL !~ /\&sk=friends/) {
       # Trying to get the good page
@@ -2837,6 +2894,25 @@ sub btnDirSaveFriends_Click
   }
   
 }  #--- End btnDirSaveFriends_Click
+
+#--------------------------#
+sub btnBrowseDirSaveFriends_Click
+#--------------------------#
+{
+  # Local variables
+  my $outputDir = $winFriends->tfDirSaveFriends->Text();
+  
+  if (-d $outputDir) {
+    # Open Window Explorer
+    Win32::Process::Create(my $ProcessObj                 ,
+                           "$ENV{'WINDIR'}\\explorer.exe" ,
+                           "explorer $outputDir"          ,
+                           0                              ,
+                           NORMAL_PRIORITY_CLASS          ,
+                           ".");
+  }
+  
+}  #--- End btnBrowseDirSaveFriends_Click
 
 #--------------------------#
 sub chSaveFriendsDir_Click
@@ -3537,10 +3613,26 @@ sub winEventThr
     }
     close($tmp);
     # Adjust Guest list checkbox text
-    if ($glCount{'going'}    and $glText{'going'}   ) { $winEvent->chGoing->Text("$glText{'going'} [$glCount{'going'}]");          }
-    if ($glCount{'maybe'}    and $glText{'maybe'}   ) { $winEvent->chMaybe->Text("$glText{'maybe'} [$glCount{'maybe'}]");          }
-    if ($glCount{'invited'}  and $glText{'invited'} ) { $winEvent->chInvited->Text("$glText{'invited'} [$glCount{'invited'}]");    }
-    if ($glCount{'declined'} and $glText{'declined'}) { $winEvent->chDeclined->Text("$glText{'declined'} [$glCount{'declined'}]"); }
+    if ($glCount{'going'}    and $glText{'going'}   ) {
+      my $encodedStr = encode($CONFIG{'CHARSET'}, "$glText{'going'} [$glCount{'going'}]");
+      $encodedStr =~ s/\\u([[:xdigit:]]{4})/chr(hex $1)/eg;
+      $winEvent->chGoing->Text($encodedStr);
+    }
+    if ($glCount{'maybe'}    and $glText{'maybe'}   ) {
+      my $encodedStr = encode($CONFIG{'CHARSET'}, "$glText{'maybe'} [$glCount{'maybe'}]");
+      $encodedStr =~ s/\\u([[:xdigit:]]{4})/chr(hex $1)/eg;
+      $winEvent->chMaybe->Text($encodedStr);
+    }
+    if ($glCount{'invited'}  and $glText{'invited'} ) {
+      my $encodedStr = encode($CONFIG{'CHARSET'}, "$glText{'invited'} [$glCount{'invited'}]");
+      $encodedStr =~ s/\\u([[:xdigit:]]{4})/chr(hex $1)/eg;
+      $winEvent->chInvited->Text($encodedStr);
+    }
+    if ($glCount{'declined'} and $glText{'declined'}) {
+      my $encodedStr = encode($CONFIG{'CHARSET'}, "$glText{'declined'} [$glCount{'declined'}]");
+      $encodedStr =~ s/\\u([[:xdigit:]]{4})/chr(hex $1)/eg;
+      $winEvent->chDeclined->Text($encodedStr);
+    }
     
     # Delete temporary files
     if ($winConfig->chDelTempFiles->Checked()) { remove_tree($tempDir); }
@@ -3623,6 +3715,25 @@ sub btnDirSaveEvent_Click
   }
   
 }  #--- End btnDirSaveEvent_Click
+
+#--------------------------#
+sub btnBrowseDirSaveEvent_Click
+#--------------------------#
+{
+  # Local variables
+  my $outputDir = $winEvent->tfDirSaveEvent->Text();
+  
+  if (-d $outputDir) {
+    # Open Window Explorer
+    Win32::Process::Create(my $ProcessObj                 ,
+                           "$ENV{'WINDIR'}\\explorer.exe" ,
+                           "explorer $outputDir"          ,
+                           0                              ,
+                           NORMAL_PRIORITY_CLASS          ,
+                           ".");
+  }
+  
+}  #--- End btnBrowseDirSaveEvent_Click
 
 #--------------------------#
 sub chSaveEventDir_Click
@@ -4050,6 +4161,7 @@ sub winContribThr
     my $title;
     if    ($currURL =~ /https:\/\/www.facebook.com\/([^\/\?]+)/                ) { $title = $1; }
     elsif ($currURL =~ /https:\/\/www.facebook.com\/profile.php\?id=([^\/\&]+)/) { $title = $1; }
+    if ($title =~ /#$/) { chop($title); }
     $winContrib->tfContribName->Text($title);
   } else {
     $winContrib->btnContribOk->Disable();
@@ -4121,6 +4233,25 @@ sub btnDirSaveContrib_Click
   }
   
 }  #--- End btnDirSaveContrib_Click
+
+#--------------------------#
+sub btnBrowseDirSaveContrib_Click
+#--------------------------#
+{
+  # Local variables
+  my $outputDir = $winContrib->tfDirSaveContrib->Text();
+  
+  if (-d $outputDir) {
+    # Open Window Explorer
+    Win32::Process::Create(my $ProcessObj                 ,
+                           "$ENV{'WINDIR'}\\explorer.exe" ,
+                           "explorer $outputDir"          ,
+                           0                              ,
+                           NORMAL_PRIORITY_CLASS          ,
+                           ".");
+  }
+  
+}  #--- End btnBrowseDirSaveContrib_Click
 
 #--------------------------#
 sub chSaveContribDir_Click
@@ -4256,12 +4387,13 @@ sub btnContribOk_Click
     my $nbrRetries    = 0;
     my $step          = 1;
     my $done          = 0;
+    my $count         = 0;
 
     if ($contribName and -d $saveDir) {
       # Start the thread
       $THR = threads->create(\&dumpContrib, $contribName, $saveDir, $refComments, $refLikePages,
                              $refLikes, $refVPosts, $nbrComments, $nbrLikePages, $nbrLikes, $nbrVPosts,
-                             $nbrRetries, $step, $done);
+                             $nbrRetries, $step, $done, $count);
       return(-1);
     } else { Win32::GUI::MessageBox($win, $STR{'err5'}, $STR{'err1T'}, 0x40010); }
   }
@@ -4274,7 +4406,7 @@ sub dumpContrib
 {
   # Local variables
   my ($contribName, $saveDir, $refComments, $refLikePages, $refLikes, $refVPosts, $nbrComments,
-      $nbrLikePages, $nbrLikes, $nbrVPosts, $nbrRetries, $step, $done) = @_;
+      $nbrLikePages, $nbrLikes, $nbrVPosts, $nbrRetries, $step, $done, $count) = @_;
 
   # Cancel button
   $SIG{'KILL'} = sub {
@@ -4306,7 +4438,7 @@ sub dumpContrib
       sleep(2);
       $THR = threads->create(\&dumpContrib, $contribName, $saveDir, $refComments, $refLikePages,
                              $refLikes, $refVPosts, $nbrComments, $nbrLikePages, $nbrLikes, $nbrVPosts,
-                             $nbrRetries, $step, $done);
+                             $nbrRetries, $step, $done, $count);
     } else {
       $winPb->lblPbCurr1->Text($STR{'err2'});
       Win32::GUI::MessageBox($winPb2, $STR{'err2'}, $STR{'err1T'}, 0x40010);
@@ -4334,11 +4466,16 @@ sub dumpContrib
   # $step == 6 : Create Excel Sheet - Likes
   # $step == 7 : Create Excel Sheet - VPosts
   
-  my $currURL       = $mech->uri();
+  my $currURL  = $mech->uri();
+  if ($currURL =~ /#$/) { chop($currURL); }
   my $nbrOperations = 1;
   if ($winContrib->chContribComments->Checked()) { $nbrOperations += 2; }
   if ($winContrib->chContribLikes->Checked()   ) { $nbrOperations += 2; }
   if ($winContrib->chContribVPosts->Checked()  ) { $nbrOperations += 2; }
+  
+  # Save page content
+  if (!-d "$saveDir\\temp") { mkdir("$saveDir\\temp"); }
+  my $localDataFile = "$saveDir\\temp\\temp.html";
 
   # First execution
   if ($step == 1) {
@@ -4355,6 +4492,11 @@ sub dumpContrib
     
     $win->ChangeCursor($HOURGLASS);
     $win->Tray->Change(-tip => $STR{'dumpContribP'}.'...');
+    
+    # Save current tab
+    $winPb->lblPbCurr1->Text($STR{'saveTab'}.'...');
+    my $status = $mech->save_content($localDataFile);
+    while ($status->{currentState} != $status->{PERSIST_STATE_FINISHED}) { sleep(1); }
     
     # Create image folder
     if (!-d "$saveDir\\images_$contribName" and $winContrib->chContribProfileIcons->Checked()) {
@@ -4377,7 +4519,17 @@ sub dumpContrib
       $winPb->pbWinPb2->SetPos(0);
     } else { $nbrComments--; } # If resume, start from last processed
     
-    my @commentNodes = $mech->selector('a.UFIImageBlockImage');
+    # Safe mode
+    my @commentNodes;
+    if (open(my $fhTemp, "<:encoding(UTF-8)", $localDataFile)) {
+      my $file_as_string = do { local $/ = <$fhTemp> };
+      $file_as_string =~ s/[\r\n]//g;
+      @commentNodes = split(/UFIImageBlockImage/, $file_as_string);
+      shift(@commentNodes);
+      close($fhTemp);
+    }
+    
+    #my @commentNodes = $mech->selector('a.UFIImageBlockImage');
     my $nbrCommentsToDo = scalar(@commentNodes);
     $winPb->pbWinPb2->SetRange(0, $nbrCommentsToDo);
     $winPb->pbWinPb2->SetStep(1);
@@ -4389,12 +4541,13 @@ sub dumpContrib
         my $commentUrl;
         my $commentImg;
         my $commentName;
-        if ($commentNode->{outerHTML} =~ / href="([^\&\"]+)(?:&|")[^\>]+hovercard.php\?id=([^\&\"]+)(?:&|")/) {
+        if ($commentNode =~ / href="([^\&\"]+)(?:&|")[^\>]+hovercard.php\?id=([^\&\"]+)(?:&|")/) {
           $commentUrl  = $1;
+          $commentUrl  =~ s/&amp;/&/g;
           $commentId   = $2;
         }
-        if ($commentNode->{innerHTML} =~ /src="([^\"]+)"/) { $commentImg  = $1; }
-        if ($commentNode->{innerHTML} =~ /alt="([^\"]+)"/) { $commentName = $1; }
+        if ($commentNode =~ /src="([^\"]+)"/) { $commentImg  = $1; }
+        if ($commentNode =~ /alt="([^\"]+)"/) { $commentName = $1; }
         
         if ($commentUrl and $commentId and $commentImg and $commentName and $commentName ne $contribName) {
           if ($currURL =~ /$commentId/) { } # On photo page, profile owner id
@@ -4453,17 +4606,37 @@ sub dumpContrib
       $winPb->lblCount2->Text('');
       $winPb->pbWinPb2->SetPos(0);
       
-      # Normal Likes
-      my @likePages = $mech->selector('a._27jf._3emk');
-      foreach my $likePage (@likePages) {
-        my $url = $likePage->{href};
-        $$refLikePages{$url} = 0; # To store number of likes per page
-      }
-      # Likes on Comments
-      my @likePages2 = $mech->selector('a.UFICommentLikeButton');
-      foreach my $likePage (@likePages2) {
-        my $url = $likePage->{href};
-        $$refLikePages{$url} = 0; # To store number of likes per page
+      # Parse the page
+      if (open(my $fhTemp, "<:encoding(UTF-8)", $localDataFile)) {
+        my $file_as_string = do { local $/ = <$fhTemp> };
+        $file_as_string =~ s/[\r\n]//g;
+        my @section = split(/fbTimelineSection fbTimelineCompactSection fbTimelineSectionTransparent/, $file_as_string);
+        undef($file_as_string);
+        foreach my $section (@section) {
+          my @parts = split(/_27jf _3emk/, $section);
+          shift(@parts);
+          foreach my $part (@parts) {
+            if ($part =~ /href=\"([^\"]+)\"/) {
+              my $url = $1;
+              if ($url =~ /ft_ent_identifier/) {
+                $url =~ s/&amp;/&/g;
+                if (!exists($$refLikePages{$url})) { $$refLikePages{$url} = 0; }
+              }
+            }
+          }
+          my @parts2 = split(/UFICommentLikeButton/, $section);
+          shift(@parts2);
+          foreach my $part (@parts2) {
+            if ($part =~ /href=\"([^\"]+)\"/) {
+              my $url = $1;
+              if ($url =~ /ft_ent_identifier/) {
+                $url =~ s/&amp;/&/g;
+                if (!exists($$refLikePages{$url})) { $$refLikePages{$url} = 0; }
+              }
+            }
+          }
+        }
+        close($fhTemp);
       }
       
       # Set progress bar
@@ -4485,22 +4658,32 @@ sub dumpContrib
         sleep($CONFIG{'TIME_TO_WAIT'});
         $winPb->lblPbCurr2->Text("$STR{'scrolling'} $likePageUrl...");
         &scrollLikePage(\$mechLikePage, $CONFIG{'TIME_TO_WAIT'});
+        $winPb->lblPbCurr2->Text("$STR{'downloading'} $likePageUrl...");
+        my $htmlPage = "$saveDir\\temp\\likePage.html";
+        my $status;
         if ($winContrib->chContribProfileIcons->Checked()) {
-          $winPb->lblPbCurr2->Text("$STR{'downloading'} $likePageUrl...");
-          my $htmlPage = "$saveDir\\temp\\likePage.html";
-          my $status = $mechLikePage->save_content($htmlPage, "$saveDir\\temp");
-          while ($status->{currentState} != $status->{PERSIST_STATE_FINISHED}) { usleep(100000); }
-        }
+          $status = $mechLikePage->save_content($htmlPage, "$saveDir\\temp");
+        } else { $status = $mechLikePage->save_content($htmlPage); }
+        while ($status->{currentState} != $status->{PERSIST_STATE_FINISHED}) { usleep(100000); }
         
         my $i = 0;
+        
         # Gather each profile details
+        my @likeProfiles;
         $winPb->lblPbCurr2->Text("$STR{'parsing'} $likePageUrl...");
-        my @likeProfiles  = $mechLikePage->selector('li._5i_q');
-        my @likeProfiles2 = $mechLikePage->selector('li.fbProfileBrowserListItem');
-        push(@likeProfiles, @likeProfiles2);
+        if (open(my $fhTemp, "<:encoding(UTF-8)", $htmlPage)) {
+          my $file_as_string = do { local $/ = <$fhTemp> };
+          $file_as_string =~ s/[\r\n]//g;
+          @likeProfiles     = split(/_5i_q/, $file_as_string);
+          shift(@likeProfiles);
+          my @likeProfiles2 = split(/fbProfileBrowserListItem/, $file_as_string);
+          shift(@likeProfiles2);
+          push(@likeProfiles, @likeProfiles2);
+          undef($file_as_string);
+          close($fhTemp);
+        }
         
         foreach my $likeProfile (@likeProfiles) {
-          my $likeProfileCode = $likeProfile->{outerHTML};
           if ($i >= $$refLikePages{$likePageUrl}) {
             my $likeId;
             my $likeUrl;
@@ -4508,7 +4691,7 @@ sub dumpContrib
             my $likeName;
             
             # Gather url and id
-            if ($likeProfileCode =~ /<(a[^\>]+)\>\<([^\<]+)\</) {
+            if ($likeProfile =~ /<(a[^\>]+)\>\<([^\<]+)\</) {
               my $profileTag = $1;
               my $imgTag     = $2;
               if ($profileTag =~ /href="([^\&\"]+)(?:&|")[^\>]+data-hovercard="([^\"]+)\"/) {
@@ -4518,9 +4701,9 @@ sub dumpContrib
               }
             }
             # Gather Image link
-            if ($likeProfileCode =~ / src="([^\"]+)\"/) { $likeImg = $1; }
+            if ($likeProfile =~ / src="([^\"]+)\"/) { $likeImg = $1; }
             # Gather name
-            if ($likeProfileCode =~ /\<a[^\>]+\>([^\<]+)\</) { $likeName = $1; }
+            if ($likeProfile =~ /\<a[^\>]+\>([^\<]+)\</) { $likeName = $1; }
             
             if ($likeUrl and $likeId and $likeImg and $likeName and $likeName ne $contribName) {
               if ($currURL =~ /$likeId/) { } # On photo page, profile owner id
@@ -4705,6 +4888,9 @@ sub dumpContrib
     } elsif (!$winContrib->chContribVPosts->Checked()) { $step = 8; }
     
     $excel->close(); # Close XLSX file
+    
+    # Delete temporary file
+    if ($winConfig->chDelTempFiles->Checked() and -d "$saveDir\\temp") { remove_tree("$saveDir\\temp"); }
     
     # Open the file
     if ($winContrib->chContribOpenXLSX->Checked()) { $win->ShellExecute('open', $filename,'','',1); }
@@ -5386,6 +5572,25 @@ sub btnDirSaveChat_Click
   }
   
 }  #--- End btnDirSaveChat_Click
+
+#--------------------------#
+sub btnBrowseDirSaveChat_Click
+#--------------------------#
+{
+  # Local variables
+  my $outputDir = $winChat->tfDirSaveChat->Text();
+  
+  if (-d $outputDir) {
+    # Open Window Explorer
+    Win32::Process::Create(my $ProcessObj                 ,
+                           "$ENV{'WINDIR'}\\explorer.exe" ,
+                           "explorer $outputDir"          ,
+                           0                              ,
+                           NORMAL_PRIORITY_CLASS          ,
+                           ".");
+  }
+  
+}  #--- End btnBrowseDirSaveChat_Click
 
 #--------------------------#
 sub chSaveChatDir_Click
@@ -6543,6 +6748,7 @@ sub winConfig
   $winConfig->chDebugLogging->Show();
   $winConfig->lblCharset->Show();
   $winConfig->cbCharset->Show();
+  $winConfig->btnOpenLog->Show();
   $winConfig->chOptSeemore->Hide();
   $winConfig->chOptComments->Hide();
   $winConfig->chOptPosts->Hide();
@@ -6588,6 +6794,7 @@ sub configTab_Click
     $winConfig->chDebugLogging->Show();
     $winConfig->lblCharset->Show();
     $winConfig->cbCharset->Show();
+    $winConfig->btnOpenLog->Show();
     $winConfig->lblMaxScrollChat->Hide();
     $winConfig->rbMaxScrollChatByPage->Hide();
     $winConfig->tfMaxScrollChat->Hide();
@@ -6641,6 +6848,7 @@ sub configTab_Click
     $winConfig->chDebugLogging->Hide();
     $winConfig->lblCharset->Hide();
     $winConfig->cbCharset->Hide();
+    $winConfig->btnOpenLog->Hide();
   
   # Show Chat options
   } else {
@@ -6664,6 +6872,7 @@ sub configTab_Click
     $winConfig->chDebugLogging->Hide();
     $winConfig->lblCharset->Hide();
     $winConfig->cbCharset->Hide();
+    $winConfig->btnOpenLog->Hide();
     $winConfig->lblMaxScrollChat->Hide();
     $winConfig->rbMaxScrollChatByPage->Hide();
     $winConfig->tfMaxScrollChat->Hide();
@@ -6838,6 +7047,18 @@ sub cbCharset_Change
   &saveConfig(\%CONFIG);
 
 }  #--- End cbCharset_Change
+
+#--------------------------#
+sub btnOpenLog_Click
+#--------------------------#
+{
+  # Open file with default program
+  if ($DEBUG_FILE and -T $DEBUG_FILE) {
+    $win->ShellExecute('open', $DEBUG_FILE,'','',1) or
+      Win32::GUI::MessageBox($win, "$STR{'errorOpening'}: ".Win32::FormatMessage(Win32::GetLastError()), $STR{'err1T'}, 0x40010);
+  }
+
+}  #--- End btnOpenLog_Click
 
 #--------------------------#
 sub tfMaxScrollChat_Change

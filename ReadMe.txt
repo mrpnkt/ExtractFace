@@ -32,8 +32,16 @@ Credits
 The main logo of ExtractFace have been created by Land-of-Web 
 (http://www.land-of-web.com) and is distributed as freeware.
 
-Most of other icons have been created by Icojam (http://www.icojam.com/) 
-and are licensed as "Public Domain", except for small Open folder icon 
-(created by PixelMixer) and "Dump chat window" logo (created by Tristan 
-Edwards (http://dribbble.com/tristanedwards)). Both are distributed as 
-freewares.
+Most of icons come from the Blue Bits collection of Icojam 
+(http://www.icojam.com/) and are licensed as "Public Domain".
+
+The icon used for open folder button comes from Basic Icons by PixelMixer 
+and is distributed as Freeware.
+
+The "Dump chat window" logo has been created by Tristan Edwards 
+(http://dribbble.com/tristanedwards) and is distributed as 
+freeware.
+
+The Open folder in Explorer icon comes from Danish Royalty Free Icons 
+by Jonas Rask Design (http://jonasraskdesign.com). This icon is 
+distributed as Freeware.

@@ -116,6 +116,8 @@ sub loadDefaultStr
   $$refSTR{'err7'}        = 'Error connection';
   $$refSTR{'err8'}        = 'have not been found in the program folder.';
   $$refSTR{'crash'}       = 'Crashed, ExtractFace will try to resume';
+  $$refSTR{'errorOpening'} = 'Error opening';
+  $$refSTR{'browseFolder'} = 'Browse folder in Explorer';
   
   # About
   $$refSTR{'author'}            = 'Author';
@@ -257,6 +259,7 @@ sub loadDefaultStr
   $$refSTR{'chAutoUpdate'}    = 'Check for update at startup';
   $$refSTR{'chDelTempFiles'}  = 'Delete temp files when finished';
   $$refSTR{'chDebugLogging'}  = 'Enable debug logging';
+  $$refSTR{'OpenLog'}         = 'Open the log';
   $$refSTR{'btnExportLang'}   = 'Export Lang.ini';
   $$refSTR{'lblCharset'}      = 'Charset';
   $$refSTR{'lblScrollOpt'}    = 'Scroll options';
