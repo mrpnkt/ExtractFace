@@ -3,9 +3,8 @@ Description 	: Dump Facebook stuff for analysis or reporting purposes.
 Author 				: Alain Rioux (admin@le-tools.com)
 WebSite				: http://le-tools.com/ExtractFace.html
 Documentation	: http://le-tools.com/ExtractFaceDoc.html
+CodePlex			: https://extractface.codeplex.com
 GitHub				: https://github.com/arioux/ExtractFace
-FossHub       : http://code.fosshub.com/ExtractFace
-
 
 Licence
 -------
@@ -45,3 +44,7 @@ freeware.
 The Open folder in Explorer icon comes from Danish Royalty Free Icons 
 by Jonas Rask Design (http://jonasraskdesign.com). This icon is 
 distributed as Freeware.
+
+The "Refresh" icon has been created by FamFamFam (Mark James) 
+(http://www.famfamfam.com) and is distributed on term of the CC 
+Attribution 4.0 license.

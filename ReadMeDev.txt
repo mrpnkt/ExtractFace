@@ -3,8 +3,8 @@ Description 	: Dump Facebook stuff for analysis or reporting purposes.
 Author 				: Alain Rioux (admin@le-tools.com)
 WebSite				: http://le-tools.com/ExtractFace.html
 Documentation	: http://le-tools.com/ExtractFaceDoc.html
+CodePlex			: https://extractface.codeplex.com
 GitHub				: https://github.com/arioux/ExtractFace
-FossHub       : http://code.fosshub.com/ExtractFace
 
 
 Development
@@ -36,15 +36,12 @@ following modules installed:
 To do
 -----
 
-- Dump friends
-	- Keep bigger profile icon (when duplicate filename) except for following/followers
 - Dump event members: 
 	- Add possibility to exceed the 500 members limit
 - Dump chat:
 	- Add support for animated image (animation code)
 	- Gather Sent from Mobile, Sent from Messenger near date
 - Dump Visitor Posts (posts, not contributors)
-- Report in other formats: HTML, CSV, TSV, or XLSX
 
 
 

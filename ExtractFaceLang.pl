@@ -73,6 +73,7 @@ sub loadDefaultStr
   $$refSTR{'download'}    = 'Download';
   $$refSTR{'lblOptions'}  = 'Options';
   $$refSTR{'openXLSX'}    = 'Open output XLSX file';
+  $$refSTR{'chOpenOutput'} = 'Open when finished';
   $$refSTR{'save'}        = 'Save';
   $$refSTR{'cancel'}      = 'Cancel';
   $$refSTR{'cancel2'}     = 'Cancelled';
@@ -80,11 +81,15 @@ sub loadDefaultStr
   $$refSTR{'writing'}     = 'Writing';
   $$refSTR{'scrolling'}   = 'Scrolling';
   $$refSTR{'downloading'} = 'Downloading';
+  $$refSTR{'saving'}      = 'Saving';
   $$refSTR{'saveTab'}     = 'Saving current tab';
   $$refSTR{'parsing'}     = 'Parsing';
   $$refSTR{'wait'}        = 'Wait';
+  $$refSTR{'createOutput'} = 'Creating output file';
   $$refSTR{'createXLSX'}  = 'Creating XLSX file';
   $$refSTR{'createSheet'} = 'Creating sheet';
+  $$refSTR{'createPage'}  = 'Creating page';
+  $$refSTR{'createTXT'}   = 'Creating text file';
   $$refSTR{'profilID'}    = 'Profile ID';
   $$refSTR{'image'}       = 'Image';
   $$refSTR{'url'}         = 'URL';
@@ -174,6 +179,7 @@ sub loadDefaultStr
   $$refSTR{'friends2'}       = 'friends';
   $$refSTR{'chIncludeIcons'} = 'Include profile icons';
   $$refSTR{'chSafeMode'}     = 'Safe mode';
+  $$refSTR{'btnRefreshTip'}  = 'Use this to reload the page';
   $$refSTR{'friendCat'}      = 'Category';
   $$refSTR{'friendsExtract'} = 'Extracting info for profile ID';
   $$refSTR{'dumpFriendsC'}   = 'Dumping friends cancelled';
@@ -250,6 +256,7 @@ sub loadDefaultStr
   $$refSTR{'lblGenOpt'}       = 'General';
   $$refSTR{'Tool'}            = 'Tool';
   $$refSTR{'Functions'}       = 'Functions';
+  $$refSTR{'chRememberPos'}   = 'Remember position of all windows';
   $$refSTR{'lblTimeToWait'}   = 'Time for loading';
   $$refSTR{'tfTimeToWaitTip'} = 'When loading page or scrolling, time to wait before any action. Increase this time for more stability. Default is 2.';
   $$refSTR{'lblTimeToWait2'}  = 'seconds';
