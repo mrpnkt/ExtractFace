@@ -2,13 +2,15 @@
 # Perl - v: 5.16.3
 #------------------------------------------------------------------------------#
 # ExtractFaceGraph.pl   : Graphic elements for ExtractFace
-# Website               : http://le-tools.com/
-# GitHub		            : https://github.com/arioux/ExtractFace
+# WebSite				        : http://le-tools.com/ExtractFace.html
+# Documentation	        : http://le-tools.com/ExtractFaceDoc.html
+# CodePlex			        : https://extractface.codeplex.com
+# GitHub				        : https://github.com/arioux/ExtractFace
 # Creation              : 2015-08-01
-# Modified              : 2015-12-09
+# Modified              : 2016-09-08
 # Author                : Alain Rioux (admin@le-tools.com)
 #
-# Copyright (C) 2015  Alain Rioux (le-tools.com)
+# Copyright (C) 2015-2016  Alain Rioux (le-tools.com)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

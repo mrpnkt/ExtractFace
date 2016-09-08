@@ -1,13 +1,15 @@
 #!/usr/bin/perl
 # Perl - v: 5.16.3
 #------------------------------------------------------------------------------#
-# Tool name   : ExtractFace
-# Website     : http://le-tools.com/
-# GitHub		  : https://github.com/arioux/ExtractFace
-# Description : Dump Facebook stuff for analysis or reporting purposes
-# Creation    : 2015-08-01
-# Modified    : 2016-08-13
-my $VERSION   = "4.2";
+# Tool name     : ExtractFace
+# Description   : Dump Facebook stuff for analysis or reporting purposes
+# WebSite				: http://le-tools.com/ExtractFace.html
+# Documentation	: http://le-tools.com/ExtractFaceDoc.html
+# CodePlex			: https://extractface.codeplex.com
+# GitHub				: https://github.com/arioux/ExtractFace
+# Creation      : 2015-08-01
+# Modified      : 2016-09-08
+my $VERSION   = "4.3";
 # Author      : Alain Rioux (admin@le-tools.com)
 #
 # Copyright (C) 2015-2016  Alain Rioux (le-tools.com)
@@ -6080,6 +6082,7 @@ sub btnChatOk_Click
     my $saveDir  = $winChat->tfDirSaveChat->Text();
     $chatName    =~ s/[\<\>\:\"\/\\\|\?\*]/-/g;
     my $interlocutor;
+    my $interlocutorURL;
     my $startText;
     my %msgProfileImg;
     my %msgProfileUrl;
@@ -6103,10 +6106,10 @@ sub btnChatOk_Click
 
     if ($chatName and -d $saveDir) {
       # Start the thread
-      $THR = threads->create(\&dumpChat, $chatName, $interlocutor, $saveDir, $refMsgProfileImg,
-                             $refMsgProfileUrl, $refMsgProfileName, $refMsgIsText, $refMsgText,
-                             $refMsgVM, $startText, $nbrRetries, $count, $step, $downloadVMStep,
-                             $currentPage, $mobilePage, $countVM);
+      $THR = threads->create(\&dumpChat, $chatName, $interlocutor, $interlocutorURL, $saveDir,
+                             $refMsgProfileImg, $refMsgProfileUrl, $refMsgProfileName,
+                             $refMsgIsText, $refMsgText, $refMsgVM, $startText, $nbrRetries,
+                             $count, $step, $downloadVMStep, $currentPage, $mobilePage, $countVM);
       return(-1);
     } else { Win32::GUI::MessageBox($win, $STR{'err5'}, $STR{'err1T'}, 0x40010); }
   }
@@ -6118,9 +6121,9 @@ sub dumpChat
 #--------------------------#
 {
   # Local variables
-  my ($chatName, $interlocutor, $saveDir, $refMsgProfileImg, $refMsgProfileUrl, $refMsgProfileName,
-      $refMsgIsText, $refMsgText, $refMsgVM, $startText, $nbrRetries, $count, $step, $downloadVMStep,
-      $currentPage, $mobilePage, $countVM) = @_;
+  my ($chatName, $interlocutor, $interlocutorURL, $saveDir, $refMsgProfileImg, $refMsgProfileUrl,
+      $refMsgProfileName, $refMsgIsText, $refMsgText, $refMsgVM, $startText, $nbrRetries, $count,
+      $step, $downloadVMStep, $currentPage, $mobilePage, $countVM) = @_;
   my $imgDir        = "$saveDir\\images_$chatName";
   my $vidDir        = "$saveDir\\videos_$chatName";
   my $vmDir         = "$saveDir\\vm_$chatName";
@@ -6167,10 +6170,10 @@ sub dumpChat
       # Restart a new thread to continue
       if ($msgErr !~ /NS_ERROR_FILE_IS_LOCKED/) { $winPb2->lblPbCurr->Text($STR{'crash'}.'...'); }
       sleep(2);
-      $THR = threads->create(\&dumpChat, $chatName, $interlocutor, $saveDir, $refMsgProfileImg,
-                             $refMsgProfileUrl, $refMsgProfileName, $refMsgIsText, $refMsgText,
-                             $refMsgVM, $startText, $nbrRetries, $count, $step, $downloadVMStep,
-                             $currentPage, $mobilePage, $countVM);
+      $THR = threads->create(\&dumpChat, $chatName, $interlocutor, $interlocutorURL, $saveDir,
+                             $refMsgProfileImg, $refMsgProfileUrl, $refMsgProfileName, $refMsgIsText,
+                             $refMsgText, $refMsgVM, $startText, $nbrRetries, $count, $step,
+                             $downloadVMStep, $currentPage, $mobilePage, $countVM);
     } else {
       Win32::GUI::MessageBox($winPb2, $STR{'err2'}, $STR{'err1T'}, 0x40010);
       # Turn off progress bar
@@ -6235,6 +6238,7 @@ sub dumpChat
     
     # Header name
     my $headerNameCode = $mech->selector('h2._r7', one => 1);
+    if ($headerNameCode->{innerHTML} =~ /href=\"([^\"]+)\"/) { $interlocutorURL = $1; }
      
     # Parse each part
     my @parts;
@@ -6613,11 +6617,11 @@ sub dumpChat
                       if ($videoImgUrl and $videoImgName) { # Download image of the video
                         # Create message
                         $text .= "<font color=\"#8B2323\">$STR{'video'}: </font><br>";
-                        $text .= "<a href=\"videos_$chatName\\$videoName\" target=\"_blank\"><img src=\"images_$chatName\\$videoImgName\" border=0></a></span><br>";
+                        $text .= "<a href=\"videos_$chatName\\$videoName\" target=\"_blank\"><img src=\"images_$chatName\\$videoImgName\" border=0></a><br>";
                       # No image, but video downloaded
                       } else {
                         $text .= "<font color=\"#8B2323\">$STR{'video'}: </font><br>";
-                        $text .= "<a href=\"videos_$chatName\\$videoName\" target=\"_blank\">$STR{'videoURL'}</a></span><br>";
+                        $text .= "<a href=\"videos_$chatName\\$videoName\" target=\"_blank\">$STR{'videoURL'}</a><br>";
                       }
                       $winPb2->lblPbCurr->Text($STR{'dumpChatP'}.'...');
                     # Link to video not found
@@ -6674,7 +6678,85 @@ sub dumpChat
                     $text .= "<font color=\"#8B2323\">$STR{'attached'}: <a href=\"$attachedURL\" target=\"_blank\">Download $attachedName</a></font><br>";
                   }
                 }
-              }                
+              }
+              
+              # Gather attached document (video)
+              elsif ($part =~ /clearfix _zow _59go _23n-"[^\>]*\> *\<img[^\>]+src=\"([^\"]+)\"(.+)/) {
+                my $videoImgUrl = $1; # Url of the image
+                my $videoImgName;     # Image filename
+                my %videosADUrl;      # List of videos, $videoImgUrl => Url or path
+
+                # Download image of the video
+                if ($winChat->chDownloadVid->Checked() or $winChat->chDownloadImg->Checked()) {
+                  if    ($videoImgUrl =~ /https:\/\/(?:[^\/]+\/)+([^\/\?]+)\?/) {
+                    $videoImgName = $1;
+                    $mech->save_url($videoImgUrl, "$imgDir\\$videoImgName");
+                  } elsif ($videoImgUrl =~ /\w+\.jpg/) {
+                    $videoImgName = $videoImgUrl;
+                    rcopy("$tmpDir\\$videoImgUrl", "$imgDir\\$videoImgName");
+                  }
+                }
+                
+                # Download the video ?
+                if ($winChat->chDownloadVid->Checked()) {
+                  # Open video in popup
+                  my @videosAD = $mech->selector('div._zow'); # Attached video code
+                  foreach my $videoAD (@videosAD) {
+                    if ($videoAD->{innerHTML} =~ /$videoImgUrl/) {
+                      if (my $videoPopup = $mech->selector('div._zox', node => $videoAD, any => 1)) {
+                        $videoPopup->click();
+                        sleep($CONFIG{'TIME_TO_WAIT'});
+                        my @videoURL = $mech->selector('a._4_8k');
+                        foreach my $videoUrl (@videoURL) {
+                          if (my $url = $videoUrl->{href}) {
+                            if ($url =~ /video/ and !exists($videosADUrl{$videoImgUrl})) {
+                              $videosADUrl{$videoImgUrl} = $url; # Path or url of the image in the chat => url of the video 
+                            }
+                          }
+                        }
+                        if (my $closeX = $mech->selector('a._5wx4', one => 1)) { $closeX->click(); } # Close popup
+                      }
+                    }
+                  }
+                  # Download video
+                  foreach my $videoADUrl (keys %videosADUrl) {
+                    my $videoName;
+                    if ($videosADUrl{$videoADUrl} =~ /https:\/\/(?:[^\/]+\/)+([^\/\?]+)\?/) { $videoName = $1; }
+                    if (!-d $vidDir) { mkdir($vidDir); }
+                    $winPb2->lblPbCurr->Text("$STR{'downloading'}: $videosADUrl{$videoADUrl}");
+                    if (!-e "$vidDir\\$videoName") { # Video will be downloaded only one time
+                      $mech->save_url($videosADUrl{$videoADUrl}, "$vidDir\\$videoName"); # Download video
+                    }
+                    $videosADUrl{$videoImgUrl} = "$videoName"; # Path or url => Path of the video
+                  }
+                  $winPb2->lblPbCurr->Text($STR{'dumpChatP'}.'...');
+                }
+                
+                # Create result code
+                if ($videoImgName and -f "$imgDir\\$videoImgName") {
+                  # Local image and local video
+                  if (exists($videosADUrl{$videoImgUrl}) and -f "$vidDir\\".$videosADUrl{$videoImgUrl}) {
+                    $text .= "<br><a href=\"videos_$chatName\\$videosADUrl{$videoImgUrl}\" target=\"_blank\"><img src=\"images_$chatName\\" .
+                             $videoImgName."\" border=0></a><br><br>";
+                  # Local image and url video
+                  } elsif (exists($videosADUrl{$videoImgUrl})) {
+                    $text .= "<br><a href=\"".$videosADUrl{$videoImgUrl}."\" target=\"_blank\"><img src=\"images_$chatName\\" .
+                             $videoImgName."\" border=0></a><br><br>";
+                  # Local image only (Include pictures but not videos)
+                  } else {
+                    $text .= "<br><img src=\"images_$chatName\\$videoImgName\" border=0></a><br><font color=\"#8B2323\">$STR{'video'}: $STR{'videoNotDL'}</font><br>";
+                  }
+                # Url image and local video
+                } elsif ($videoImgUrl and exists($videosADUrl{$videoImgUrl}) and -f "$vidDir\\".$videosADUrl{$videoImgUrl}) {
+                    $text .= "<br><a href=\"videos_$chatName\\".$videosADUrl{$videoImgUrl}."\" target=\"_blank\"><img src=\"$videoImgUrl\" border=0></a><br><br>";
+                # Url image and url video
+                } elsif ($videoImgUrl and exists($videosADUrl{$videoImgUrl})) {
+                  $text .= "<br><a href=\"".$videosADUrl{$videoImgUrl}."\" target=\"_blank\"><img src=\"$videoImgUrl\" border=0></a><br><br>";
+                # Url image only (Safe mode)
+                } else {
+                  $text .= "<br><img src=\"$videoImgUrl\" border=0><br><font color=\"#8B2323\">$STR{'video'}: $STR{'videoNotDL'}</font><br>";
+                }
+              }
               
               # Notifications (source, Seen: date, etc.)
               if ($part =~ /<span class="_510f"[^\>]*>(.+)<\/span>/) {
@@ -6948,7 +7030,8 @@ sub dumpChat
       $winPb2->lblCount->Text($count2);
       # Is it me ?
       my $isMe = 0;
-      if ($$refMsgProfileUrl{$date} ne '-' and $$refMsgProfileUrl{$date} !~ /$profilID/) { $isMe = 1; }
+      if ($$refMsgProfileUrl{$date} ne '-' and $$refMsgProfileUrl{$date} !~ /$profilID/ and
+          $$refMsgProfileUrl{$date} ne $interlocutorURL) { $isMe = 1; }
       # Print fields
       print HTML "<tr>\n";
       my $imgPath;
@@ -7312,7 +7395,7 @@ sub checkUpdate
   
   # Download the version file  
   my $ua = new LWP::UserAgent;
-  $ua->agent('ExtractFaceUpdate $VERSION');
+  $ua->agent("ExtractFaceUpdate $VERSION");
   $ua->default_header('Accept-Language' => 'en');
   my $req = new HTTP::Request GET => $URL_VER;
   my $res = $ua->request($req);
