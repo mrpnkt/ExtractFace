@@ -8,8 +8,8 @@
 # CodePlex			: https://extractface.codeplex.com
 # GitHub				: https://github.com/arioux/ExtractFace
 # Creation      : 2015-08-01
-# Modified      : 2016-09-08
-my $VERSION   = "4.3";
+# Modified      : 2016-09-28
+my $VERSION   = "4.4";
 # Author      : Alain Rioux (admin@le-tools.com)
 #
 # Copyright (C) 2015-2016  Alain Rioux (le-tools.com)
@@ -6278,30 +6278,34 @@ sub dumpChat
         if ($part =~ /<a href="([^\"]+)"[^\>]+data-reactid=[^\>]+><img alt="([^\"]+)" src="([^\"]+)/ or
             $part =~ /<a href="([^\"]+)"[^\>]+data-reactroot=[^\>]+><img[^\>]+alt="([^\"]+)"[^\>]+src="([^\"]+)/ or
             $part =~ /<a href="([^\"]+)"[^\>]+data-reactroot=[^\>]+><img[^\>]+src="([^\"]+)"[^\>]+alt="([^\"]+)/ or
+            $part =~ /<a data-reactroot=[^\>]+href="([^\"]+)"[^\>]*><img[^\>]+alt="([^\"]+)"[^\>]+src="([^\"]+)/ or
             $part =~ /<img[^\>]+src="([^\"]+)"[^\>]+alt="([^\"]+)"/ or
-            $part =~ /<img[^\>]+src="([^\"]+)"[^\>]+alt="([^\"]+)"/) { # Profil does not exist anymore
+            $part =~ /<img[^\>]+alt="([^\"]+)"[^\>]+src="([^\"]+)"/) { # Profil does not exist anymore
           my $profileUrl;
           my $profileName;
           my $profileImg;
           my $profileImgUrl;
-          if ($3) {
+          if (my $tmp3 = $3) {
             $profileUrl  = $1;
-            if ($3 =~ /\.jpg$/) {
-              $profileName   = $2;
-              $profileImgUrl = $3;
+            my $tmp2 = $2;
+            if ($tmp3 =~ /\.jpg$/) {
+              $profileName   = $tmp2;
+              $profileImgUrl = $tmp3;
             } else {
-              $profileName   = $3;
-              $profileImgUrl = $2;
+              $profileName   = $tmp3;
+              $profileImgUrl = $tmp2;
             }
           } else {
             $profileUrl  = '-';
+            my $tmp1 = $1;
+            my $tmp2 = $2;
             if ($2 =~ /\.jpg$/) {
-              $profileName   = $1;
-              $profileImgUrl = $2;
+              $profileName   = $tmp1;
+              $profileImgUrl = $tmp2;
               $profileImg    = $profileImgUrl;
             } else {
-              $profileName   = $2;
-              $profileImgUrl = $1;
+              $profileName   = $tmp2;
+              $profileImgUrl = $tmp1;
               
             }
           }
